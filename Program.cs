@@ -21,7 +21,13 @@ builder.Services.AddScoped<WarehouseManage.Interfaces.IUserRepository, Warehouse
 
 // Register services
 builder.Services.AddScoped<WarehouseManage.Interfaces.IAuthService, WarehouseManage.Services.AuthService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IVerificationService, WarehouseManage.Services.VerificationService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IEmailService, WarehouseManage.Services.EmailService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.ISmsService, WarehouseManage.Services.SmsService>();
 builder.Services.AddScoped<WarehouseManage.Helpers.JwtHelper>();
+
+// Register HttpClient for SMS service
+builder.Services.AddHttpClient();
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

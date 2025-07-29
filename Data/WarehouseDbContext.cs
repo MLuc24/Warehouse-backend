@@ -34,6 +34,8 @@ public partial class WarehouseDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<VerificationCode> VerificationCodes { get; set; }
+
     public virtual DbSet<Warehouse> Warehouses { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -245,12 +247,54 @@ public partial class WarehouseDbContext : DbContext
             entity.Property(e => e.Email)
                 .HasMaxLength(255)
                 .IsUnicode(false);
+            entity.Property(e => e.PhoneNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.FullName).HasMaxLength(100);
             entity.Property(e => e.Role).HasMaxLength(50);
             entity.Property(e => e.Status).HasDefaultValue(true);
+            entity.Property(e => e.IsEmailVerified).HasDefaultValue(false);
+            entity.Property(e => e.IsPhoneVerified).HasDefaultValue(false);
             entity.Property(e => e.Username)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<VerificationCode>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Contact)
+                .HasMaxLength(255)
+                .IsRequired();
+            
+            entity.Property(e => e.Code)
+                .HasMaxLength(10)
+                .IsRequired();
+            
+            entity.Property(e => e.Type)
+                .HasMaxLength(20)
+                .IsRequired();
+            
+            entity.Property(e => e.Purpose)
+                .HasMaxLength(50)
+                .IsRequired();
+            
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime2");
+            
+            entity.Property(e => e.ExpiresAt)
+                .HasColumnType("datetime2");
+            
+            entity.Property(e => e.IsUsed)
+                .HasDefaultValue(false);
+            
+            entity.Property(e => e.Attempts)
+                .HasDefaultValue(0);
+
+            // Index for performance
+            entity.HasIndex(e => new { e.Contact, e.Code, e.Purpose });
         });
 
         modelBuilder.Entity<Warehouse>(entity =>

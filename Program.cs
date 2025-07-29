@@ -16,9 +16,16 @@ builder.Services.AddDbContext<WarehouseDbContext>(options =>
 // Configure AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
 
+// Register repositories
+builder.Services.AddScoped<WarehouseManage.Interfaces.IUserRepository, WarehouseManage.Repositories.UserRepository>();
+
+// Register services
+builder.Services.AddScoped<WarehouseManage.Interfaces.IAuthService, WarehouseManage.Services.AuthService>();
+builder.Services.AddScoped<WarehouseManage.Helpers.JwtHelper>();
+
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]);
+var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured"));
 
 builder.Services.AddAuthentication(options =>
 {
@@ -55,18 +62,19 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Add Swagger/OpenAPI
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/openapi/v1.json", "Warehouse Management API v1");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Warehouse Management API v1");
     });
 }
 

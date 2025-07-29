@@ -6,6 +6,9 @@ using WarehouseManage.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load environment variables
+builder.Configuration.AddEnvironmentVariables();
+
 // Add services to the container.
 builder.Services.AddControllers();
 

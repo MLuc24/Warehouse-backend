@@ -35,20 +35,20 @@ public class SmsService : ISmsService
             // Chuẩn hóa số điện thoại (thêm +84 nếu cần)
             var normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
-            // Tạo request payload (ví dụ cho Twilio hoặc các dịch vụ SMS khác)
-            var payload = new
+            // Tạo form data cho Twilio API
+            var formData = new List<KeyValuePair<string, string>>
             {
-                to = normalizedPhone,
-                message = message,
-                brandName = brandName
+                new("To", normalizedPhone),
+                new("From", "+354337494"), // Số Twilio của bạn (cần thay đổi)
+                new("Body", message)
             };
 
-            var json = System.Text.Json.JsonSerializer.Serialize(payload);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var content = new FormUrlEncodedContent(formData);
 
-            // Thêm authentication header
+            // Twilio sử dụng Basic Authentication với API Key làm username và Secret làm password
+            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{apiKey}:{apiSecret}"));
             _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Basic {credentials}");
 
             var response = await _httpClient.PostAsync(apiUrl, content);
 

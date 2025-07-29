@@ -120,7 +120,7 @@ public class VerificationService : IVerificationService
                 return false; // Quá số lần thử
             }
 
-            if (verificationCode.IsExpired)
+            if (DateTime.UtcNow > verificationCode.ExpiresAt)
             {
                 await _context.SaveChangesAsync();
                 return false; // Mã đã hết hạn
@@ -143,13 +143,14 @@ public class VerificationService : IVerificationService
     {
         try
         {
+            var currentTime = DateTime.UtcNow;
             return await _context.VerificationCodes
                 .AnyAsync(c => 
                     c.Contact == contact && 
                     c.Type == type && 
                     c.Purpose == purpose &&
                     c.IsUsed &&
-                    !c.IsExpired);
+                    c.ExpiresAt > currentTime);
         }
         catch (Exception ex)
         {

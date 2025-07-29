@@ -21,6 +21,4 @@ public class VerificationCode
     public bool IsUsed { get; set; } = false;
     
     public int Attempts { get; set; } = 0;
-    
-    public bool IsExpired => DateTime.UtcNow > ExpiresAt;
 }

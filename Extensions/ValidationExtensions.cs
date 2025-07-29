@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 
 namespace WarehouseManage.Extensions;
 
@@ -30,5 +31,20 @@ public static class ValidationExtensions
             return false;
             
         return new EmailAddressAttribute().IsValid(email);
+    }
+    
+    public static bool IsValidPhoneNumber(this string? phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return false;
+        
+        // Regex cho số điện thoại Việt Nam
+        // Hỗ trợ: 0xxxxxxxxx, +84xxxxxxxxx, 84xxxxxxxxx
+        var phoneRegex = new Regex(@"^(\+84|84|0)(3[2-9]|5[689]|7[06-9]|8[1-689]|9[0-46-9])[0-9]{7}$");
+        
+        // Loại bỏ khoảng trắng và dấu gạch ngang
+        var cleanPhone = phoneNumber.Replace(" ", "").Replace("-", "");
+        
+        return phoneRegex.IsMatch(cleanPhone);
     }
 }

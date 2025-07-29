@@ -7,8 +7,12 @@ using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load .env file
-Env.Load();
+// Load .env file từ thư mục hiện tại
+var envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+if (File.Exists(envFilePath))
+{
+    Env.Load(envFilePath);
+}
 
 // Load environment variables
 builder.Configuration.AddEnvironmentVariables();
@@ -38,7 +42,17 @@ builder.Services.AddScoped<WarehouseManage.Services.IValidationService, Warehous
 
 builder.Services.AddScoped<WarehouseManage.Helpers.JwtHelper>();
 
-// Register HttpClient for SMS service
+// Register HttpClient với cấu hình optimized cho API validation
+builder.Services.AddHttpClient("ApiValidation", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15); // Timeout ngắn hơn cho API validation
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+{
+    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true // Bypass SSL cho development
+});
+
+// Register HttpClient mặc định cho các service khác
 builder.Services.AddHttpClient();
 
 // Configure JWT Authentication

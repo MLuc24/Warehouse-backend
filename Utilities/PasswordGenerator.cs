@@ -44,6 +44,3 @@ public static class PasswordGenerator
         }
     }
 }
-
-// Uncomment dòng dưới để chạy trong Program.cs khi cần generate passwords
-// PasswordGenerator.GenerateTestPasswords();

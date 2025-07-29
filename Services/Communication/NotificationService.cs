@@ -140,19 +140,11 @@ public class NotificationService : INotificationService
     {
         try
         {
-            // Trong development, skip validation để dễ test
-            if (_environment.IsDevelopment())
-            {
-                _logger.LogInformation("Development mode - skipping email validation for {Email}", email);
-                return true;
-            }
-
-            // Sử dụng API kiểm tra email thật (ví dụ: AbstractAPI, EmailValidation.io)
             var emailValidationApiKey = Environment.GetEnvironmentVariable("EMAIL_VALIDATION_API_KEY");
             if (string.IsNullOrEmpty(emailValidationApiKey))
             {
                 _logger.LogWarning("Email validation API key not configured, skipping validation");
-                return true; // Nếu không có API key, bỏ qua validation
+                return true; // Chỉ skip khi không có API key
             }
 
             var apiUrl = $"https://emailvalidation.abstractapi.com/v1/?api_key={emailValidationApiKey}&email={email}";
@@ -165,27 +157,29 @@ public class NotificationService : INotificationService
                 
                 var result = JsonSerializer.Deserialize<EmailValidationResponse>(jsonResponse);
                 
-                // Relaxed validation - accept if email format is valid or deliverable
-                var isValid = result?.Deliverability == "DELIVERABLE" || 
-                             result?.IsSmtpValid == true ||
-                             !string.IsNullOrEmpty(result?.Email); // Nếu API trả về email thì coi như valid
+                // Nghiêm ngặt - chỉ chấp nhận email DELIVERABLE
+                var isValid = result?.Deliverability == "DELIVERABLE";
                 
                 if (!isValid)
                 {
-                    _logger.LogWarning("Email validation failed for {Email}. Deliverability: {Deliverability}, SmtpValid: {SmtpValid}", 
+                    _logger.LogWarning("Email validation FAILED for {Email}. Deliverability: {Deliverability}, SmtpValid: {SmtpValid}. Email does not exist or is not deliverable.", 
                         email, result?.Deliverability, result?.IsSmtpValid);
+                }
+                else
+                {
+                    _logger.LogInformation("Email validation PASSED for {Email}. Email is deliverable.", email);
                 }
                 
                 return isValid;
             }
             
-            _logger.LogWarning("Email validation API failed for {Email} with status: {StatusCode}", email, response.StatusCode);
-            return true; // Nếu API lỗi, cho phép gửi
+            _logger.LogError("Email validation API failed for {Email} with status: {StatusCode}", email, response.StatusCode);
+            return false; // Nếu API lỗi, không cho phép gửi khi có API key
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating email {Email}", email);
-            return true; // Nếu có lỗi, cho phép gửi
+            return false; // Nếu có lỗi, không cho phép gửi khi có API key
         }
     }
 
@@ -193,19 +187,11 @@ public class NotificationService : INotificationService
     {
         try
         {
-            // Trong development, skip validation để dễ test
-            if (_environment.IsDevelopment())
-            {
-                _logger.LogInformation("Development mode - skipping phone validation for {Phone}", phoneNumber);
-                return true;
-            }
-
-            // Sử dụng API kiểm tra số điện thoại thật (ví dụ: Twilio Lookup, AbstractAPI)
             var phoneValidationApiKey = Environment.GetEnvironmentVariable("PHONE_VALIDATION_API_KEY");
             if (string.IsNullOrEmpty(phoneValidationApiKey))
             {
                 _logger.LogWarning("Phone validation API key not configured, skipping validation");
-                return true;
+                return true; // Chỉ skip khi không có API key
             }
 
             var apiUrl = $"https://phonevalidation.abstractapi.com/v1/?api_key={phoneValidationApiKey}&phone={phoneNumber}";
@@ -214,19 +200,33 @@ public class NotificationService : INotificationService
             if (response.IsSuccessStatusCode)
             {
                 var jsonResponse = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Phone validation response for {Phone}: {Response}", phoneNumber, jsonResponse);
+                
                 var result = JsonSerializer.Deserialize<PhoneValidationResponse>(jsonResponse);
                 
-                // Kiểm tra số điện thoại có hợp lệ không
-                return result?.Valid == true;
+                // Nghiêm ngặt - chỉ chấp nhận số điện thoại hợp lệ
+                var isValid = result?.Valid == true;
+                
+                if (!isValid)
+                {
+                    _logger.LogWarning("Phone validation FAILED for {Phone}. Valid: {Valid}, Carrier: {Carrier}. Phone does not exist or is invalid.", 
+                        phoneNumber, result?.Valid, result?.Carrier);
+                }
+                else
+                {
+                    _logger.LogInformation("Phone validation PASSED for {Phone}. Phone is valid.", phoneNumber);
+                }
+                
+                return isValid;
             }
             
-            _logger.LogWarning("Phone validation API failed for {Phone}", phoneNumber);
-            return true; // Nếu API lỗi, cho phép gửi
+            _logger.LogError("Phone validation API failed for {Phone} with status: {StatusCode}", phoneNumber, response.StatusCode);
+            return false; // Nếu API lỗi, không cho phép gửi khi có API key
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating phone {Phone}", phoneNumber);
-            return true; // Nếu có lỗi, cho phép gửi
+            return false; // Nếu có lỗi, không cho phép gửi khi có API key
         }
     }
 

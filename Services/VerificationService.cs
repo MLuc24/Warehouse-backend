@@ -9,19 +9,16 @@ namespace WarehouseManage.Services;
 public class VerificationService : IVerificationService
 {
     private readonly WarehouseDbContext _context;
-    private readonly IEmailService _emailService;
-    private readonly ISmsService _smsService;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<VerificationService> _logger;
 
     public VerificationService(
         WarehouseDbContext context,
-        IEmailService emailService,
-        ISmsService smsService,
+        INotificationService notificationService,
         ILogger<VerificationService> logger)
     {
         _context = context;
-        _emailService = emailService;
-        _smsService = smsService;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -29,6 +26,14 @@ public class VerificationService : IVerificationService
     {
         try
         {
+            // Kiểm tra contact có tồn tại thực tế không
+            var isValidContact = await _notificationService.ValidateContactAsync(contact, type);
+            if (!isValidContact)
+            {
+                _logger.LogWarning("Contact {Contact} is invalid or does not exist", contact);
+                return false;
+            }
+
             // Xóa các mã cũ chưa sử dụng
             await CleanupOldCodesAsync(contact, type);
 
@@ -63,7 +68,7 @@ public class VerificationService : IVerificationService
             bool sent = false;
             if (type == VerificationConstants.Types.EMAIL)
             {
-                sent = await _emailService.SendEmailAsync(
+                sent = await _notificationService.SendEmailAsync(
                     contact,
                     "Mã xác thực đăng ký tài khoản",
                     $"Mã xác thực của bạn là: {code}. Mã có hiệu lực trong {VerificationConstants.CODE_EXPIRY_MINUTES} phút."
@@ -71,7 +76,7 @@ public class VerificationService : IVerificationService
             }
             else if (type == VerificationConstants.Types.PHONE)
             {
-                sent = await _smsService.SendSmsAsync(
+                sent = await _notificationService.SendSmsAsync(
                     contact,
                     $"Ma xac thuc cua ban la: {code}. Ma co hieu luc trong {VerificationConstants.CODE_EXPIRY_MINUTES} phut."
                 );

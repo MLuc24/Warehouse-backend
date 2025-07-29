@@ -18,6 +18,7 @@ public class AuthService : IAuthService
     private readonly IMapper _mapper;
     private readonly ILogger<AuthService> _logger;
     private readonly IVerificationService _verificationService;
+    private readonly IValidationService _validationService;
     private readonly WarehouseDbContext _context;
 
     public AuthService(
@@ -26,6 +27,7 @@ public class AuthService : IAuthService
         IMapper mapper,
         ILogger<AuthService> logger,
         IVerificationService verificationService,
+        IValidationService validationService,
         WarehouseDbContext context)
     {
         _userRepository = userRepository;
@@ -33,6 +35,7 @@ public class AuthService : IAuthService
         _mapper = mapper;
         _logger = logger;
         _verificationService = verificationService;
+        _validationService = validationService;
         _context = context;
     }
 
@@ -124,22 +127,16 @@ public class AuthService : IAuthService
     {
         try
         {
-            // Validate contact format
-            if (!IsValidContactFormat(request.Contact, request.Type))
+            // Chỉ kiểm tra business logic - format validation để frontend xử lý
+            var email = request.Type == VerificationConstants.Types.EMAIL ? request.Contact : null;
+            var phoneNumber = request.Type == VerificationConstants.Types.PHONE ? request.Contact : null;
+            
+            var validationResult = await _validationService.ValidateUserRegistrationAsync("", email ?? "", phoneNumber);
+            
+            // Chỉ check availability, format đã được frontend validate
+            if (!validationResult.IsValid)
             {
-                throw new ArgumentException(
-                    request.Type == VerificationConstants.Types.EMAIL 
-                        ? ErrorMessages.Auth.INVALID_EMAIL_FORMAT 
-                        : ErrorMessages.Auth.INVALID_PHONE_FORMAT);
-            }
-
-            // Check if contact already exists
-            if (!await IsContactAvailableAsync(request.Contact, request.Type))
-            {
-                throw new ArgumentException(
-                    request.Type == VerificationConstants.Types.EMAIL 
-                        ? ErrorMessages.Auth.EMAIL_ALREADY_EXISTS 
-                        : ErrorMessages.Auth.PHONE_ALREADY_EXISTS);
+                throw new ArgumentException(string.Join(", ", validationResult.Errors));
             }
 
             var result = await _verificationService.SendVerificationCodeAsync(request.Contact, request.Type);
@@ -208,37 +205,21 @@ public class AuthService : IAuthService
                 };
             }
 
-            // Validate contact format
-            if (!IsValidContactFormat(request.Contact, request.Type))
-            {
-                return new RegistrationResponseDto
-                {
-                    Success = false,
-                    Message = request.Type == VerificationConstants.Types.EMAIL 
-                        ? ErrorMessages.Auth.INVALID_EMAIL_FORMAT 
-                        : ErrorMessages.Auth.INVALID_PHONE_FORMAT
-                };
-            }
+            // Sử dụng ValidationService để kiểm tra logic nghiệp vụ
+            var email = request.Type == VerificationConstants.Types.EMAIL ? request.Contact : null;
+            var phoneNumber = request.Type == VerificationConstants.Types.PHONE ? request.Contact : null;
+            
+            var validationResult = await _validationService.ValidateUserRegistrationAsync(
+                request.Username, 
+                email ?? "", 
+                phoneNumber);
 
-            // Check if contact is still available
-            if (!await IsContactAvailableAsync(request.Contact, request.Type))
+            if (!validationResult.IsValid)
             {
                 return new RegistrationResponseDto
                 {
                     Success = false,
-                    Message = request.Type == VerificationConstants.Types.EMAIL 
-                        ? ErrorMessages.Auth.EMAIL_ALREADY_EXISTS 
-                        : ErrorMessages.Auth.PHONE_ALREADY_EXISTS
-                };
-            }
-
-            // Check if username is available
-            if (!await IsUsernameAvailableAsync(request.Username))
-            {
-                return new RegistrationResponseDto
-                {
-                    Success = false,
-                    Message = ErrorMessages.Auth.USERNAME_ALREADY_EXISTS
+                    Message = string.Join(", ", validationResult.Errors)
                 };
             }
 
@@ -299,52 +280,5 @@ public class AuthService : IAuthService
                 Message = ErrorMessages.General.INTERNAL_ERROR
             };
         }
-    }
-
-    public async Task<bool> IsContactAvailableAsync(string contact, string type)
-    {
-        try
-        {
-            if (type == VerificationConstants.Types.EMAIL)
-            {
-                return !await _context.Users.AnyAsync(u => u.Email == contact);
-            }
-            else if (type == VerificationConstants.Types.PHONE)
-            {
-                return !await _context.Users.AnyAsync(u => u.PhoneNumber == contact);
-            }
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking contact availability for {Contact}", contact);
-            return false;
-        }
-    }
-
-    public async Task<bool> IsUsernameAvailableAsync(string username)
-    {
-        try
-        {
-            return !await _context.Users.AnyAsync(u => u.Username == username);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking username availability for {Username}", username);
-            return false;
-        }
-    }
-
-    private static bool IsValidContactFormat(string contact, string type)
-    {
-        if (type == VerificationConstants.Types.EMAIL)
-        {
-            return contact.IsValidEmail();
-        }
-        else if (type == VerificationConstants.Types.PHONE)
-        {
-            return contact.IsValidPhoneNumber();
-        }
-        return false;
     }
 }

@@ -8,11 +8,21 @@ public interface IVerificationService
     Task CleanupExpiredCodesAsync();
 }
 
+public interface INotificationService
+{
+    Task<bool> SendEmailAsync(string to, string subject, string body);
+    Task<bool> SendSmsAsync(string phoneNumber, string message);
+    Task<bool> ValidateContactAsync(string contact, string type);
+}
+
+// Legacy interfaces - deprecated, use INotificationService instead
+[Obsolete("Use INotificationService instead")]
 public interface IEmailService
 {
     Task<bool> SendEmailAsync(string to, string subject, string body);
 }
 
+[Obsolete("Use INotificationService instead")]
 public interface ISmsService
 {
     Task<bool> SendSmsAsync(string phoneNumber, string message);

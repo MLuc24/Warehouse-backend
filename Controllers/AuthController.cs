@@ -141,57 +141,6 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Kiểm tra tính khả dụng của email hoặc số điện thoại
-    /// </summary>
-    /// <param name="contact">Email hoặc số điện thoại</param>
-    /// <param name="type">Loại liên hệ (Email hoặc Phone)</param>
-    /// <returns>Tình trạng khả dụng</returns>
-    [HttpGet("check-contact-availability")]
-    public async Task<IActionResult> CheckContactAvailability([FromQuery] string contact, [FromQuery] string type)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(contact) || string.IsNullOrWhiteSpace(type))
-            {
-                return BadRequest(new { success = false, message = ErrorMessages.General.INVALID_INPUT });
-            }
-
-            var isAvailable = await _authService.IsContactAvailableAsync(contact, type);
-            return Ok(new { success = true, available = isAvailable });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unhandled error in CheckContactAvailability endpoint");
-            return StatusCode(500, new { success = false, message = ErrorMessages.General.INTERNAL_ERROR });
-        }
-    }
-
-    /// <summary>
-    /// Kiểm tra tính khả dụng của tên đăng nhập
-    /// </summary>
-    /// <param name="username">Tên đăng nhập</param>
-    /// <returns>Tình trạng khả dụng</returns>
-    [HttpGet("check-username-availability")]
-    public async Task<IActionResult> CheckUsernameAvailability([FromQuery] string username)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                return BadRequest(new { success = false, message = ErrorMessages.General.INVALID_INPUT });
-            }
-
-            var isAvailable = await _authService.IsUsernameAvailableAsync(username);
-            return Ok(new { success = true, available = isAvailable });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unhandled error in CheckUsernameAvailability endpoint");
-            return StatusCode(500, new { success = false, message = ErrorMessages.General.INTERNAL_ERROR });
-        }
-    }
-
-    /// <summary>
     /// Kiểm tra trạng thái đăng nhập
     /// </summary>
     /// <returns>Thông tin người dùng hiện tại</returns>

@@ -11,8 +11,4 @@ public interface IAuthService
     Task<bool> SendVerificationCodeAsync(SendVerificationCodeRequestDto request);
     Task<bool> VerifyCodeAsync(VerifyCodeRequestDto request);
     Task<RegistrationResponseDto> CompleteRegistrationAsync(CompleteRegistrationRequestDto request);
-    
-    // Helper methods
-    Task<bool> IsContactAvailableAsync(string contact, string type);
-    Task<bool> IsUsernameAvailableAsync(string username);
 }

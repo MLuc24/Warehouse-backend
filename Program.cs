@@ -3,8 +3,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WarehouseManage.Data;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load .env file
+Env.Load();
 
 // Load environment variables
 builder.Configuration.AddEnvironmentVariables();
@@ -25,8 +29,13 @@ builder.Services.AddScoped<WarehouseManage.Interfaces.IUserRepository, Warehouse
 // Register services
 builder.Services.AddScoped<WarehouseManage.Interfaces.IAuthService, WarehouseManage.Services.AuthService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IVerificationService, WarehouseManage.Services.VerificationService>();
-builder.Services.AddScoped<WarehouseManage.Interfaces.IEmailService, WarehouseManage.Services.EmailService>();
-builder.Services.AddScoped<WarehouseManage.Interfaces.ISmsService, WarehouseManage.Services.SmsService>();
+
+// Register notification service
+builder.Services.AddScoped<WarehouseManage.Interfaces.INotificationService, WarehouseManage.Services.Communication.NotificationService>();
+
+// Register validation service
+builder.Services.AddScoped<WarehouseManage.Services.IValidationService, WarehouseManage.Services.ValidationService>();
+
 builder.Services.AddScoped<WarehouseManage.Helpers.JwtHelper>();
 
 // Register HttpClient for SMS service

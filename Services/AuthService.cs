@@ -316,4 +316,22 @@ public class AuthService : IAuthService
             };
         }
     }
+
+    public async Task<bool> LogoutAsync()
+    {
+        try
+        {
+            // Đơn giản chỉ return true vì không có blacklist token
+            // Client sẽ tự xóa token ở phía frontend
+            await Task.CompletedTask;
+            
+            _logger.LogInformation("User logged out successfully");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during logout");
+            return false;
+        }
+    }
 }

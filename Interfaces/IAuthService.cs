@@ -16,4 +16,7 @@ public interface IAuthService
     
     // Reset password method - giữ lại vì có logic đặc biệt  
     Task<ForgotPasswordResponseDto> ResetPasswordAsync(ResetPasswordDto request);
+    
+    // Logout method
+    Task<bool> LogoutAsync();
 }

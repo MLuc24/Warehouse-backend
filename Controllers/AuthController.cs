@@ -121,6 +121,32 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Đăng xuất khỏi hệ thống
+    /// </summary>
+    /// <returns>Kết quả đăng xuất</returns>
+    [HttpPost("logout")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> Logout()
+    {
+        try
+        {
+            var result = await _authService.LogoutAsync();
+            
+            if (result)
+            {
+                return Ok(new { success = true, message = "Đăng xuất thành công." });
+            }
+            
+            return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi đăng xuất." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in Logout endpoint");
+            return StatusCode(500, new { success = false, message = ErrorMessages.General.INTERNAL_ERROR });
+        }
+    }
+
+    /// <summary>
     /// Endpoint chung để gửi mã xác thực với purpose cụ thể
     /// </summary>
     /// <param name="request">Thông tin gửi mã xác thực</param>

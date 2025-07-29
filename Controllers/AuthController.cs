@@ -52,64 +52,6 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Gửi mã xác thực đến email hoặc số điện thoại
-    /// </summary>
-    /// <param name="request">Thông tin liên hệ và loại xác thực</param>
-    /// <returns>Kết quả gửi mã xác thực</returns>
-    [HttpPost("send-verification-code")]
-    public async Task<IActionResult> SendVerificationCode([FromBody] SendVerificationCodeRequestDto request)
-    {
-        try
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { success = false, message = ErrorMessages.General.INVALID_INPUT, errors = ModelState });
-            }
-
-            await _authService.SendVerificationCodeAsync(request);
-            return Ok(new { success = true, message = ErrorMessages.Auth.VERIFICATION_CODE_SENT });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unhandled error in SendVerificationCode endpoint");
-            return StatusCode(500, new { success = false, message = ErrorMessages.General.INTERNAL_ERROR });
-        }
-    }
-
-    /// <summary>
-    /// Xác thực mã được gửi về email hoặc SMS
-    /// </summary>
-    /// <param name="request">Thông tin xác thực mã</param>
-    /// <returns>Kết quả xác thực</returns>
-    [HttpPost("verify-code")]
-    public async Task<IActionResult> VerifyCode([FromBody] VerifyCodeRequestDto request)
-    {
-        try
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { success = false, message = ErrorMessages.General.INVALID_INPUT, errors = ModelState });
-            }
-
-            await _authService.VerifyCodeAsync(request);
-            return Ok(new { success = true, message = "Xác thực thành công" });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unhandled error in VerifyCode endpoint");
-            return StatusCode(500, new { success = false, message = ErrorMessages.General.INTERNAL_ERROR });
-        }
-    }
-
-    /// <summary>
     /// Hoàn tất quá trình đăng ký tài khoản
     /// </summary>
     /// <param name="request">Thông tin đăng ký đầy đủ</param>
@@ -174,6 +116,119 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting current user info");
+            return StatusCode(500, new { success = false, message = ErrorMessages.General.INTERNAL_ERROR });
+        }
+    }
+
+    /// <summary>
+    /// Endpoint chung để gửi mã xác thực với purpose cụ thể
+    /// </summary>
+    /// <param name="request">Thông tin gửi mã xác thực</param>
+    /// <returns>Kết quả gửi mã</returns>
+    [HttpPost("verification/send-code")]
+    public async Task<IActionResult> SendVerificationCodeWithPurpose([FromBody] SendVerificationWithPurposeDto request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = ErrorMessages.General.INVALID_INPUT, errors = ModelState });
+            }
+
+            var result = await _authService.SendVerificationCodeWithPurposeAsync(request.Contact, request.Type, request.Purpose);
+            
+            var message = request.Purpose switch
+            {
+                VerificationConstants.Purposes.REGISTRATION => "Mã xác thực đăng ký đã được gửi.",
+                VerificationConstants.Purposes.FORGOT_PASSWORD => "Mã xác thực đặt lại mật khẩu đã được gửi.",
+                _ => "Mã xác thực đã được gửi."
+            };
+
+            return Ok(new VerificationResponseDto
+            {
+                Success = result,
+                Message = result ? message : "Không thể gửi mã xác thực. Vui lòng thử lại sau.",
+                NextStep = result ? "Nhập mã xác thực 6 chữ số để tiếp tục." : null
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in SendVerificationCodeWithPurpose endpoint");
+            return StatusCode(500, new { success = false, message = ErrorMessages.General.INTERNAL_ERROR });
+        }
+    }
+
+    /// <summary>
+    /// Endpoint chung để xác thực mã với purpose cụ thể
+    /// </summary>
+    /// <param name="request">Thông tin xác thực mã</param>
+    /// <returns>Kết quả xác thực</returns>
+    [HttpPost("verification/verify-code")]
+    public async Task<IActionResult> VerifyCodeWithPurpose([FromBody] VerifyCodeWithPurposeDto request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = ErrorMessages.General.INVALID_INPUT, errors = ModelState });
+            }
+
+            var result = await _authService.VerifyCodeWithPurposeAsync(request.Contact, request.Code, request.Type, request.Purpose);
+            
+            var message = request.Purpose switch
+            {
+                VerificationConstants.Purposes.REGISTRATION => "Xác thực đăng ký thành công.",
+                VerificationConstants.Purposes.FORGOT_PASSWORD => "Xác thực đặt lại mật khẩu thành công.",
+                _ => "Xác thực thành công."
+            };
+
+            var nextStep = request.Purpose switch
+            {
+                VerificationConstants.Purposes.REGISTRATION => "Hoàn tất thông tin đăng ký.",
+                VerificationConstants.Purposes.FORGOT_PASSWORD => "Nhập mật khẩu mới.",
+                _ => null
+            };
+
+            return Ok(new VerificationResponseDto
+            {
+                Success = result,
+                Message = result ? message : "Mã xác thực không hợp lệ hoặc đã hết hạn.",
+                NextStep = result ? nextStep : null
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in VerifyCodeWithPurpose endpoint");
+            return StatusCode(500, new { success = false, message = ErrorMessages.General.INTERNAL_ERROR });
+        }
+    }
+
+    /// <summary>
+    /// Bước 3: Đặt lại mật khẩu mới
+    /// </summary>
+    /// <param name="request">Email, mã xác thực và mật khẩu mới</param>
+    /// <returns>Kết quả đặt lại mật khẩu</returns>
+    [HttpPost("forgot-password/reset")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = ErrorMessages.General.INVALID_INPUT, errors = ModelState });
+            }
+
+            var result = await _authService.ResetPasswordAsync(request);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in ResetPassword endpoint");
             return StatusCode(500, new { success = false, message = ErrorMessages.General.INTERNAL_ERROR });
         }
     }

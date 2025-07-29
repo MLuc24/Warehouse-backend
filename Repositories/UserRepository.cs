@@ -24,6 +24,16 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Username == username);
     }
 
+    public async Task<User?> GetByEmailAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return null;
+
+        return await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == email);
+    }
+
     public async Task<User?> GetByIdAsync(int userId)
     {
         if (userId <= 0)
@@ -42,5 +52,34 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .AsNoTracking()
             .AnyAsync(u => u.Username == username);
+    }
+
+    public async Task<bool> IsEmailExistsAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        return await _context.Users
+            .AsNoTracking()
+            .AnyAsync(u => u.Email == email);
+    }
+
+    public async Task UpdateAsync(User user)
+    {
+        if (user == null)
+            throw new ArgumentNullException(nameof(user));
+
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<User> CreateAsync(User user)
+    {
+        if (user == null)
+            throw new ArgumentNullException(nameof(user));
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+        return user;
     }
 }

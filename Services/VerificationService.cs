@@ -24,6 +24,11 @@ public class VerificationService : IVerificationService
 
     public async Task<bool> SendVerificationCodeAsync(string contact, string type)
     {
+        return await SendVerificationCodeAsync(contact, type, VerificationConstants.Purposes.REGISTRATION);
+    }
+
+    public async Task<bool> SendVerificationCodeAsync(string contact, string type, string purpose)
+    {
         try
         {
             // Kiểm tra contact có tồn tại thực tế không
@@ -35,11 +40,11 @@ public class VerificationService : IVerificationService
             }
 
             // Xóa các mã cũ chưa sử dụng
-            await CleanupOldCodesAsync(contact, type);
+            await CleanupOldCodesAsync(contact, type, purpose);
 
             // Kiểm tra cooldown (không cho gửi lại quá nhanh)
             var lastCode = await _context.VerificationCodes
-                .Where(c => c.Contact == contact && c.Type == type)
+                .Where(c => c.Contact == contact && c.Type == type && c.Purpose == purpose)
                 .OrderByDescending(c => c.CreatedAt)
                 .FirstOrDefaultAsync();
 
@@ -56,7 +61,7 @@ public class VerificationService : IVerificationService
                 Contact = contact,
                 Code = code,
                 Type = type,
-                Purpose = VerificationConstants.Purposes.REGISTRATION,
+                Purpose = purpose,
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(VerificationConstants.CODE_EXPIRY_MINUTES)
             };
@@ -66,20 +71,27 @@ public class VerificationService : IVerificationService
 
             // Gửi mã xác thực
             bool sent = false;
+            string subject, message;
+            
+            // Customize message based on purpose
+            if (purpose == VerificationConstants.Purposes.FORGOT_PASSWORD)
+            {
+                subject = "Mã xác thực đặt lại mật khẩu";
+                message = $"Mã xác thực đặt lại mật khẩu của bạn là: {code}. Mã có hiệu lực trong {VerificationConstants.CODE_EXPIRY_MINUTES} phút.";
+            }
+            else
+            {
+                subject = "Mã xác thực đăng ký tài khoản";
+                message = $"Mã xác thực của bạn là: {code}. Mã có hiệu lực trong {VerificationConstants.CODE_EXPIRY_MINUTES} phút.";
+            }
+
             if (type == VerificationConstants.Types.EMAIL)
             {
-                sent = await _notificationService.SendEmailAsync(
-                    contact,
-                    "Mã xác thực đăng ký tài khoản",
-                    $"Mã xác thực của bạn là: {code}. Mã có hiệu lực trong {VerificationConstants.CODE_EXPIRY_MINUTES} phút."
-                );
+                sent = await _notificationService.SendEmailAsync(contact, subject, message);
             }
             else if (type == VerificationConstants.Types.PHONE)
             {
-                sent = await _notificationService.SendSmsAsync(
-                    contact,
-                    $"Ma xac thuc cua ban la: {code}. Ma co hieu luc trong {VerificationConstants.CODE_EXPIRY_MINUTES} phut."
-                );
+                sent = await _notificationService.SendSmsAsync(contact, $"Ma xac thuc cua ban la: {code}. Ma co hieu luc trong {VerificationConstants.CODE_EXPIRY_MINUTES} phut.");
             }
 
             if (!sent)
@@ -188,6 +200,19 @@ public class VerificationService : IVerificationService
     {
         var oldCodes = await _context.VerificationCodes
             .Where(c => c.Contact == contact && c.Type == type && !c.IsUsed)
+            .ToListAsync();
+
+        if (oldCodes.Any())
+        {
+            _context.VerificationCodes.RemoveRange(oldCodes);
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    private async Task CleanupOldCodesAsync(string contact, string type, string purpose)
+    {
+        var oldCodes = await _context.VerificationCodes
+            .Where(c => c.Contact == contact && c.Type == type && c.Purpose == purpose && !c.IsUsed)
             .ToListAsync();
 
         if (oldCodes.Any())

@@ -7,8 +7,13 @@ public interface IAuthService
     Task<LoginResponseDto> LoginAsync(LoginRequestDto request);
     Task<bool> ValidateUserCredentialsAsync(string username, string password);
     
-    // Registration methods
-    Task<bool> SendVerificationCodeAsync(SendVerificationCodeRequestDto request);
-    Task<bool> VerifyCodeAsync(VerifyCodeRequestDto request);
+    // Registration method - giữ lại vì có logic đặc biệt
     Task<RegistrationResponseDto> CompleteRegistrationAsync(CompleteRegistrationRequestDto request);
+    
+    // Common verification methods
+    Task<bool> SendVerificationCodeWithPurposeAsync(string contact, string type, string purpose);
+    Task<bool> VerifyCodeWithPurposeAsync(string contact, string code, string type, string purpose);
+    
+    // Reset password method - giữ lại vì có logic đặc biệt  
+    Task<ForgotPasswordResponseDto> ResetPasswordAsync(ResetPasswordDto request);
 }

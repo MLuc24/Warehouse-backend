@@ -123,67 +123,44 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<bool> SendVerificationCodeAsync(SendVerificationCodeRequestDto request)
+    // Common method for sending verification code with different purposes
+    private async Task<bool> SendVerificationCodeInternalAsync(string contact, string type, string purpose)
     {
         try
         {
-            // Chỉ kiểm tra business logic - format validation để frontend xử lý
-            var email = request.Type == VerificationConstants.Types.EMAIL ? request.Contact : null;
-            var phoneNumber = request.Type == VerificationConstants.Types.PHONE ? request.Contact : null;
-            
-            var validationResult = await _validationService.ValidateUserRegistrationAsync("", email ?? "", phoneNumber);
-            
-            // Chỉ check availability, format đã được frontend validate
-            if (!validationResult.IsValid)
-            {
-                throw new ArgumentException(string.Join(", ", validationResult.Errors));
-            }
-
-            var result = await _verificationService.SendVerificationCodeAsync(request.Contact, request.Type);
-            if (!result)
-            {
-                throw new Exception(ErrorMessages.Auth.SEND_VERIFICATION_FAILED);
-            }
-
-            return true;
-        }
-        catch (ArgumentException)
-        {
-            throw;
+            return await _verificationService.SendVerificationCodeAsync(contact, type, purpose);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending verification code to {Contact}", request.Contact);
-            throw new Exception(ErrorMessages.Auth.SEND_VERIFICATION_FAILED);
+            _logger.LogError(ex, "Error sending verification code to {Contact} for purpose {Purpose}", contact, purpose);
+            return false;
         }
     }
 
-    public async Task<bool> VerifyCodeAsync(VerifyCodeRequestDto request)
+    // Common method for verifying code with different purposes
+    private async Task<bool> VerifyCodeInternalAsync(string contact, string code, string type, string purpose)
     {
         try
         {
-            var result = await _verificationService.VerifyCodeAsync(
-                request.Contact, 
-                request.Code, 
-                request.Type, 
-                VerificationConstants.Purposes.REGISTRATION);
-
-            if (!result)
-            {
-                throw new ArgumentException(ErrorMessages.Auth.VERIFICATION_CODE_INVALID);
-            }
-
-            return true;
-        }
-        catch (ArgumentException)
-        {
-            throw;
+            return await _verificationService.VerifyCodeAsync(contact, code, type, purpose);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error verifying code for {Contact}", request.Contact);
-            throw new Exception(ErrorMessages.General.INTERNAL_ERROR);
+            _logger.LogError(ex, "Error verifying code for {Contact} with purpose {Purpose}", contact, purpose);
+            return false;
         }
+    }
+
+    // Public method for sending verification code with specific purpose
+    public async Task<bool> SendVerificationCodeWithPurposeAsync(string contact, string type, string purpose)
+    {
+        return await SendVerificationCodeInternalAsync(contact, type, purpose);
+    }
+
+    // Public method for verifying code with specific purpose
+    public async Task<bool> VerifyCodeWithPurposeAsync(string contact, string code, string type, string purpose)
+    {
+        return await VerifyCodeInternalAsync(contact, code, type, purpose);
     }
 
     public async Task<RegistrationResponseDto> CompleteRegistrationAsync(CompleteRegistrationRequestDto request)
@@ -275,6 +252,64 @@ public class AuthService : IAuthService
         {
             _logger.LogError(ex, "Error completing registration for {Contact}", request.Contact);
             return new RegistrationResponseDto
+            {
+                Success = false,
+                Message = ErrorMessages.General.INTERNAL_ERROR
+            };
+        }
+    }
+
+    public async Task<ForgotPasswordResponseDto> ResetPasswordAsync(ResetPasswordDto request)
+    {
+        try
+        {
+            // Kiểm tra email có tồn tại trong hệ thống không
+            var user = await _userRepository.GetByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return new ForgotPasswordResponseDto
+                {
+                    Success = false,
+                    Message = "Email không hợp lệ."
+                };
+            }
+
+            // Sử dụng method chung để xác thực mã lần nữa để đảm bảo an toàn
+            var isCodeValid = await VerifyCodeInternalAsync(
+                request.Email,
+                request.Code,
+                VerificationConstants.Types.EMAIL,
+                VerificationConstants.Purposes.FORGOT_PASSWORD
+            );
+
+            if (!isCodeValid)
+            {
+                return new ForgotPasswordResponseDto
+                {
+                    Success = false,
+                    Message = "Mã xác thực không hợp lệ hoặc đã hết hạn."
+                };
+            }
+
+            // Đặt lại mật khẩu
+            var hashedPassword = PasswordHelper.HashPassword(request.NewPassword);
+            user.PasswordHash = hashedPassword;
+
+            await _userRepository.UpdateAsync(user);
+
+            // Log thành công
+            _logger.LogInformation("Password reset successfully for user: {Email}", request.Email);
+
+            return new ForgotPasswordResponseDto
+            {
+                Success = true,
+                Message = "Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập bằng mật khẩu mới."
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resetting password for email: {Email}", request.Email);
+            return new ForgotPasswordResponseDto
             {
                 Success = false,
                 Message = ErrorMessages.General.INTERNAL_ERROR

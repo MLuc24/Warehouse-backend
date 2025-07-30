@@ -16,6 +16,12 @@ builder.Services.AddDbContext<WarehouseDbContext>(options =>
 // Configure AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
 
+// Register repositories
+builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierRepository, WarehouseManage.Repositories.SupplierRepository>();
+
+// Register services
+builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierService, WarehouseManage.Services.SupplierService>();
+
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]);

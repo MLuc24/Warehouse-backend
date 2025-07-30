@@ -16,9 +16,29 @@ builder.Services.AddDbContext<WarehouseDbContext>(options =>
 // Configure AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
 
+// Register repositories (Product only)
+builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierRepository, WarehouseManage.Repositories.SupplierRepository>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IProductRepository, WarehouseManage.Repositories.ProductRepository>();
+
+// Register services (Product only)  
+builder.Services.AddScoped<WarehouseManage.Interfaces.IProductService, WarehouseManage.Services.ProductService>();
+
+// Register HttpClient với cấu hình optimized cho API validation
+builder.Services.AddHttpClient("ApiValidation", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15); // Timeout ngắn hơn cho API validation
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+{
+    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true // Bypass SSL cho development
+});
+
+// Register HttpClient mặc định cho các service khác
+builder.Services.AddHttpClient();
+
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]);
+var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured"));
 
 builder.Services.AddAuthentication(options =>
 {
@@ -64,10 +84,6 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/openapi/v1.json", "Warehouse Management API v1");
-    });
 }
 
 app.UseHttpsRedirection();

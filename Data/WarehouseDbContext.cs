@@ -44,7 +44,7 @@ public partial class WarehouseDbContext : DbContext
         if (!optionsBuilder.IsConfigured)
         {
             // Fallback connection string nếu không được configure
-            optionsBuilder.UseSqlServer("Server=MANHLUC\\MSPML;Database=WareHouse;User Id=sa;Password=0354337494;MultipleActiveResultSets=true;TrustServerCertificate=True");
+            optionsBuilder.UseSqlServer("Server=localhost,1433;Database=WareHouse;Integrated Security=true;MultipleActiveResultSets=true;TrustServerCertificate=True");
         }
     }
 

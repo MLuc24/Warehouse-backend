@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WarehouseManage", "backend\WarehouseManage.csproj", "{23B762B7-91CF-7EAB-C36D-0AC316500135}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WarehouseManage", "WarehouseManage.csproj", "{23B762B7-91CF-7EAB-C36D-0AC316500135}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

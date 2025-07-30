@@ -148,7 +148,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// Only use HTTPS redirection if HTTPS port is configured
+if (app.Environment.IsProduction() || builder.Configuration["ASPNETCORE_URLS"]?.Contains("https") == true)
+{
+    app.UseHttpsRedirection();
+}
 
 // Use CORS
 app.UseCors("AllowFrontend");

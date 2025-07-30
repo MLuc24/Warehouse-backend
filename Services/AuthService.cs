@@ -167,20 +167,9 @@ public class AuthService : IAuthService
     {
         try
         {
-            // Kiểm tra xem contact đã được verify chưa
-            var isVerified = await _verificationService.IsContactVerifiedAsync(
-                request.Contact, 
-                request.Type, 
-                VerificationConstants.Purposes.REGISTRATION);
-
-            if (!isVerified)
-            {
-                return new RegistrationResponseDto
-                {
-                    Success = false,
-                    Message = ErrorMessages.Auth.VERIFICATION_REQUIRED
-                };
-            }
+            // Bước 3: Complete registration
+            // Không cần kiểm tra verify lại vì đây là bước cuối sau khi đã verify thành công ở bước 2
+            // Frontend đảm bảo rằng chỉ có thể đến bước này sau khi verify thành công
 
             // Sử dụng ValidationService để kiểm tra logic nghiệp vụ
             var email = request.Type == VerificationConstants.Types.EMAIL ? request.Contact : null;

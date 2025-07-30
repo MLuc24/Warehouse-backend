@@ -30,11 +30,13 @@ builder.Services.AddAutoMapper(typeof(Program));
 // Register repositories
 builder.Services.AddScoped<WarehouseManage.Interfaces.IUserRepository, WarehouseManage.Repositories.UserRepository>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierRepository, WarehouseManage.Repositories.SupplierRepository>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IProductRepository, WarehouseManage.Repositories.ProductRepository>();
 
 // Register services
 builder.Services.AddScoped<WarehouseManage.Interfaces.IAuthService, WarehouseManage.Services.AuthService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IVerificationService, WarehouseManage.Services.VerificationService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierService, WarehouseManage.Services.SupplierService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IProductService, WarehouseManage.Services.ProductService>();
 
 // Register notification service
 builder.Services.AddScoped<WarehouseManage.Interfaces.INotificationService, WarehouseManage.Services.Communication.NotificationService>();
@@ -142,6 +144,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "Warehouse Management API v1");
+        options.RoutePrefix = string.Empty; // Set Swagger UI at root
     });
 }
 

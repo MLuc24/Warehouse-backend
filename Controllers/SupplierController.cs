@@ -124,7 +124,7 @@ public class SupplierController : ControllerBase
     }
 
     /// <summary>
-    /// Xóa nhà cung cấp
+    /// Xóa nhà cung cấp (chuyển trạng thái sang Hết hạn)
     /// </summary>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")] // Only Admin can delete
@@ -138,7 +138,7 @@ public class SupplierController : ControllerBase
                 return NotFound(new { message = "Không tìm thấy nhà cung cấp" });
             }
 
-            return Ok(new { message = "Xóa nhà cung cấp thành công" });
+            return Ok(new { message = "Đã chuyển nhà cung cấp sang trạng thái hết hạn" });
         }
         catch (InvalidOperationException ex)
         {

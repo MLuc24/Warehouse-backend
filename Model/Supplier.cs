@@ -19,6 +19,8 @@ public partial class Supplier
 
     public DateTime? CreatedAt { get; set; }
 
+    public string Status { get; set; } = "Active"; // Active, Expired
+
     public virtual ICollection<GoodsReceipt> GoodsReceipts { get; set; } = new List<GoodsReceipt>();
 
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();

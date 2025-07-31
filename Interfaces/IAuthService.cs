@@ -11,7 +11,7 @@ public interface IAuthService
     Task<RegistrationResponseDto> CompleteRegistrationAsync(CompleteRegistrationRequestDto request);
     
     // Common verification methods
-    Task<bool> SendVerificationCodeWithPurposeAsync(string contact, string type, string purpose);
+    Task<VerificationResponseDto> SendVerificationCodeWithPurposeAsync(string contact, string type, string purpose);
     Task<bool> VerifyCodeWithPurposeAsync(string contact, string code, string type, string purpose);
     
     // Reset password method - giữ lại vì có logic đặc biệt  

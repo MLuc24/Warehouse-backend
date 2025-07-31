@@ -242,10 +242,10 @@ public class AuthController : ControllerBase
             var result = await _authService.ResetPasswordAsync(request);
             if (!result.Success)
             {
-                return BadRequest(result);
+                return BadRequest(new { success = false, message = result.Message });
             }
 
-            return Ok(result);
+            return Ok(new { success = true, message = result.Message });
         }
         catch (Exception ex)
         {

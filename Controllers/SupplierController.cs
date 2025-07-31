@@ -23,7 +23,7 @@ public class SupplierController : ControllerBase
     /// Lấy danh sách tất cả nhà cung cấp (có phân trang và tìm kiếm)
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin")] // Only Admin can access
+    [Authorize(Roles = "Admin,Manager,Employee")] // All roles can view
     public async Task<ActionResult<SupplierListResponseDto>> GetAllSuppliers([FromQuery] SupplierSearchDto searchDto)
     {
         try
@@ -42,7 +42,7 @@ public class SupplierController : ControllerBase
     /// Lấy thông tin nhà cung cấp theo ID
     /// </summary>
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin")] // Only Admin can access
+    [Authorize(Roles = "Admin,Manager,Employee")] // All roles can view
     public async Task<ActionResult<SupplierDto>> GetSupplierById(int id)
     {
         try
@@ -124,7 +124,7 @@ public class SupplierController : ControllerBase
     }
 
     /// <summary>
-    /// Xóa nhà cung cấp (chuyển trạng thái sang Hết hạn)
+    /// Xóa nhà cung cấp
     /// </summary>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")] // Only Admin can delete
@@ -138,7 +138,7 @@ public class SupplierController : ControllerBase
                 return NotFound(new { message = "Không tìm thấy nhà cung cấp" });
             }
 
-            return Ok(new { message = "Đã chuyển nhà cung cấp sang trạng thái hết hạn" });
+            return Ok(new { message = "Xóa nhà cung cấp thành công" });
         }
         catch (InvalidOperationException ex)
         {

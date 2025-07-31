@@ -11,6 +11,7 @@ public class SupplierDto
     public string? Email { get; set; }
     public string? TaxCode { get; set; }
     public DateTime? CreatedAt { get; set; }
+    public string Status { get; set; } = "Active";
     
     // Additional fields for management
     public int TotalProducts { get; set; }

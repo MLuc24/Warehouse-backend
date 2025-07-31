@@ -26,4 +26,7 @@ public interface ISupplierRepository
     Task<bool> HasActiveProductsAsync(int supplierId);
     Task<bool> HasGoodsReceiptsAsync(int supplierId);
     Task<List<Product>> GetSupplierProductsAsync(int supplierId);
+    
+    // Active suppliers for dropdowns/selection
+    Task<List<SupplierDto>> GetActiveSuppliersAsync();
 }

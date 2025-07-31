@@ -124,7 +124,7 @@ public class SupplierController : ControllerBase
     }
 
     /// <summary>
-    /// Xóa nhà cung cấp
+    /// Xóa nhà cung cấp (chuyển trạng thái thành Hết hạn)
     /// </summary>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")] // Only Admin can delete
@@ -138,7 +138,7 @@ public class SupplierController : ControllerBase
                 return NotFound(new { message = "Không tìm thấy nhà cung cấp" });
             }
 
-            return Ok(new { message = "Xóa nhà cung cấp thành công" });
+            return Ok(new { message = "Nhà cung cấp đã được chuyển sang trạng thái hết hạn" });
         }
         catch (InvalidOperationException ex)
         {
@@ -215,6 +215,25 @@ public class SupplierController : ControllerBase
         {
             _logger.LogError(ex, "Error occurred while checking if supplier can be deleted {SupplierId}", id);
             return StatusCode(500, new { message = "Đã xảy ra lỗi khi kiểm tra nhà cung cấp" });
+        }
+    }
+
+    /// <summary>
+    /// Lấy danh sách nhà cung cấp đang hoạt động (cho dropdown, selection)
+    /// </summary>
+    [HttpGet("active")]
+    [Authorize(Roles = "Admin,Manager,Employee")] // All roles can view
+    public async Task<ActionResult<List<SupplierDto>>> GetActiveSuppliers()
+    {
+        try
+        {
+            var activeSuppliers = await _supplierService.GetActiveSuppliersAsync();
+            return Ok(activeSuppliers);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while getting active suppliers");
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi lấy danh sách nhà cung cấp đang hoạt động" });
         }
     }
 }

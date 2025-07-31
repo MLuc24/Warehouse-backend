@@ -22,4 +22,7 @@ public interface ISupplierService
     
     // Business Logic
     Task<bool> SupplierExistsAsync(int supplierId);
+    
+    // Active suppliers for dropdowns
+    Task<List<SupplierDto>> GetActiveSuppliersAsync();
 }

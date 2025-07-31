@@ -4,8 +4,8 @@ namespace WarehouseManage.DTOs.Auth;
 
 public class LoginRequestDto
 {
-    [Required(ErrorMessage = "Tên đăng nhập là bắt buộc")]
-    [StringLength(50, MinimumLength = 3, ErrorMessage = "Tên đăng nhập phải từ 3-50 ký tự")]
+    [Required(ErrorMessage = "Tên đăng nhập hoặc email là bắt buộc")]
+    [StringLength(100, MinimumLength = 3, ErrorMessage = "Tên đăng nhập hoặc email phải từ 3-100 ký tự")]
     public string Username { get; set; } = null!;
 
     [Required(ErrorMessage = "Mật khẩu là bắt buộc")]

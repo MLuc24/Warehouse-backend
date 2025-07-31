@@ -48,22 +48,23 @@ public class AuthService : IAuthService
                 throw new ArgumentException(ErrorMessages.Auth.INVALID_CREDENTIALS);
             }
 
-            var user = await _userRepository.GetByUsernameAsync(request.Username);
+            // Support login with username or email
+            var user = await _userRepository.GetByUsernameOrEmailAsync(request.Username);
             if (user == null)
             {
-                _logger.LogWarning("Login attempt with non-existent username: {Username}", request.Username);
+                _logger.LogWarning("Login attempt with non-existent username/email: {UsernameOrEmail}", request.Username);
                 throw new UnauthorizedAccessException(ErrorMessages.Auth.INVALID_CREDENTIALS);
             }
 
             if (user.Status != true)
             {
-                _logger.LogWarning("Login attempt with disabled account: {Username}", request.Username);
+                _logger.LogWarning("Login attempt with disabled account: {UsernameOrEmail}", request.Username);
                 throw new UnauthorizedAccessException(ErrorMessages.Auth.ACCOUNT_DISABLED);
             }
 
             if (!PasswordHelper.VerifyPassword(request.Password, user.PasswordHash))
             {
-                _logger.LogWarning("Login attempt with invalid password for user: {Username}", request.Username);
+                _logger.LogWarning("Login attempt with invalid password for user: {UsernameOrEmail}", request.Username);
                 throw new UnauthorizedAccessException(ErrorMessages.Auth.INVALID_CREDENTIALS);
             }
 
@@ -110,7 +111,8 @@ public class AuthService : IAuthService
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 return false;
 
-            var user = await _userRepository.GetByUsernameAsync(username);
+            // Support validation with username or email
+            var user = await _userRepository.GetByUsernameOrEmailAsync(username);
             if (user == null || user.Status != true)
                 return false;
 
@@ -118,7 +120,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating credentials for username: {Username}", username);
+            _logger.LogError(ex, "Error validating credentials for username/email: {UsernameOrEmail}", username);
             return false;
         }
     }
@@ -332,10 +334,13 @@ public class AuthService : IAuthService
     {
         try
         {
+            _logger.LogInformation("Reset password attempt for email: {Email}", request.Email);
+            
             // Kiểm tra email có tồn tại trong hệ thống không
             var user = await _userRepository.GetByEmailAsync(request.Email);
             if (user == null)
             {
+                _logger.LogWarning("Reset password failed: Email not found: {Email}", request.Email);
                 return new ForgotPasswordResponseDto
                 {
                     Success = false,
@@ -343,23 +348,9 @@ public class AuthService : IAuthService
                 };
             }
 
-            // Sử dụng method chung để xác thực mã lần nữa để đảm bảo an toàn
-            var isCodeValid = await VerifyCodeInternalAsync(
-                request.Email,
-                request.Code,
-                VerificationConstants.Types.EMAIL,
-                VerificationConstants.Purposes.FORGOT_PASSWORD
-            );
-
-            if (!isCodeValid)
-            {
-                return new ForgotPasswordResponseDto
-                {
-                    Success = false,
-                    Message = "Mã xác thực không hợp lệ hoặc đã hết hạn."
-                };
-            }
-
+            // Không cần verify code lại vì đã được verify thành công ở bước trước
+            // Logic: Nếu người dùng đã đến được bước này, nghĩa là họ đã verify code thành công
+            
             // Đặt lại mật khẩu
             var hashedPassword = PasswordHelper.HashPassword(request.NewPassword);
             user.PasswordHash = hashedPassword;

@@ -72,10 +72,7 @@ public class SupplierService : ISupplierService
         if (!await _supplierRepository.ExistsAsync(supplierId))
             return false;
 
-        // Check if supplier can be deleted
-        if (!await CanDeleteSupplierAsync(supplierId))
-            throw new InvalidOperationException("Không thể xóa nhà cung cấp này vì đang có sản phẩm hoặc phiếu nhập kho liên quan.");
-
+        // Change supplier status to Expired instead of deleting
         return await _supplierRepository.DeleteAsync(supplierId);
     }
 
@@ -172,5 +169,10 @@ public class SupplierService : ISupplierService
     public async Task<bool> SupplierExistsAsync(int supplierId)
     {
         return await _supplierRepository.ExistsAsync(supplierId);
+    }
+
+    public async Task<List<SupplierDto>> GetActiveSuppliersAsync()
+    {
+        return await _supplierRepository.GetActiveSuppliersAsync();
     }
 }

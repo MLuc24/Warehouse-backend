@@ -25,7 +25,9 @@ public class SupplierRepository : ISupplierRepository
 
     public async Task<SupplierListResponseDto> GetAllAsync(SupplierSearchDto searchDto)
     {
-        var query = _context.Suppliers.AsQueryable();
+        var query = _context.Suppliers
+            .Where(s => s.Status == "Active") // Only show active suppliers by default
+            .AsQueryable();
 
         // Apply search filters
         if (!string.IsNullOrWhiteSpace(searchDto.SearchTerm))
@@ -74,6 +76,7 @@ public class SupplierRepository : ISupplierRepository
                 Email = s.Email,
                 TaxCode = s.TaxCode,
                 CreatedAt = s.CreatedAt,
+                Status = s.Status,
                 TotalProducts = s.Products.Count,
                 TotalReceipts = s.GoodsReceipts.Count,
                 TotalPurchaseValue = s.GoodsReceipts.Sum(gr => gr.TotalAmount ?? 0)
@@ -93,6 +96,7 @@ public class SupplierRepository : ISupplierRepository
     public async Task<Supplier> CreateAsync(Supplier supplier)
     {
         supplier.CreatedAt = DateTime.UtcNow;
+        supplier.Status = "Active"; // Set default status
         _context.Suppliers.Add(supplier);
         await _context.SaveChangesAsync();
         return supplier;
@@ -120,19 +124,20 @@ public class SupplierRepository : ISupplierRepository
         if (supplier == null)
             return false;
 
-        _context.Suppliers.Remove(supplier);
+        // Instead of deleting, change status to Expired
+        supplier.Status = "Expired";
         await _context.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> ExistsAsync(int supplierId)
     {
-        return await _context.Suppliers.AnyAsync(s => s.SupplierId == supplierId);
+        return await _context.Suppliers.AnyAsync(s => s.SupplierId == supplierId && s.Status == "Active");
     }
 
     public async Task<bool> ExistsByNameAsync(string supplierName, int? excludeId = null)
     {
-        var query = _context.Suppliers.Where(s => s.SupplierName.ToLower() == supplierName.ToLower());
+        var query = _context.Suppliers.Where(s => s.SupplierName.ToLower() == supplierName.ToLower() && s.Status == "Active");
         
         if (excludeId.HasValue)
             query = query.Where(s => s.SupplierId != excludeId.Value);
@@ -145,7 +150,7 @@ public class SupplierRepository : ISupplierRepository
         if (string.IsNullOrWhiteSpace(taxCode))
             return false;
 
-        var query = _context.Suppliers.Where(s => s.TaxCode != null && s.TaxCode.ToLower() == taxCode.ToLower());
+        var query = _context.Suppliers.Where(s => s.TaxCode != null && s.TaxCode.ToLower() == taxCode.ToLower() && s.Status == "Active");
         
         if (excludeId.HasValue)
             query = query.Where(s => s.SupplierId != excludeId.Value);
@@ -158,7 +163,7 @@ public class SupplierRepository : ISupplierRepository
         if (string.IsNullOrWhiteSpace(email))
             return false;
 
-        var query = _context.Suppliers.Where(s => s.Email != null && s.Email.ToLower() == email.ToLower());
+        var query = _context.Suppliers.Where(s => s.Email != null && s.Email.ToLower() == email.ToLower() && s.Status == "Active");
         
         if (excludeId.HasValue)
             query = query.Where(s => s.SupplierId != excludeId.Value);
@@ -207,6 +212,7 @@ public class SupplierRepository : ISupplierRepository
     public async Task<List<SupplierDto>> GetTopSuppliersAsync(int count = 5)
     {
         return await _context.Suppliers
+            .Where(s => s.Status == "Active") // Only active suppliers
             .Include(s => s.Products)
             .Include(s => s.GoodsReceipts)
             .Select(s => new SupplierDto
@@ -218,6 +224,7 @@ public class SupplierRepository : ISupplierRepository
                 Email = s.Email,
                 TaxCode = s.TaxCode,
                 CreatedAt = s.CreatedAt,
+                Status = s.Status,
                 TotalProducts = s.Products.Count,
                 TotalReceipts = s.GoodsReceipts.Count,
                 TotalPurchaseValue = s.GoodsReceipts.Sum(gr => gr.TotalAmount ?? 0)
@@ -241,6 +248,25 @@ public class SupplierRepository : ISupplierRepository
     {
         return await _context.Products
             .Where(p => p.SupplierId == supplierId)
+            .ToListAsync();
+    }
+
+    public async Task<List<SupplierDto>> GetActiveSuppliersAsync()
+    {
+        return await _context.Suppliers
+            .Where(s => s.Status == "Active")
+            .Select(s => new SupplierDto
+            {
+                SupplierId = s.SupplierId,
+                SupplierName = s.SupplierName,
+                Address = s.Address,
+                PhoneNumber = s.PhoneNumber,
+                Email = s.Email,
+                TaxCode = s.TaxCode,
+                CreatedAt = s.CreatedAt,
+                Status = s.Status
+            })
+            .OrderBy(s => s.SupplierName)
             .ToListAsync();
     }
 }

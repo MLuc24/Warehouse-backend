@@ -25,6 +25,12 @@ public static class ErrorMessages
         public const string MAX_VERIFICATION_ATTEMPTS = "Bạn đã nhập sai quá nhiều lần";
         public const string VERIFICATION_REQUIRED = "Vui lòng xác thực email hoặc số điện thoại trước";
         public const string SEND_VERIFICATION_FAILED = "Không thể gửi mã xác thực, vui lòng thử lại";
+        
+        // Specific validation messages
+        public const string EMAIL_NOT_EXISTS_FOR_RESET = "Email này không tồn tại trong hệ thống. Vui lòng kiểm tra lại hoặc đăng ký tài khoản mới.";
+        public const string EMAIL_EXISTS_FOR_REGISTRATION = "Email này đã được sử dụng. Vui lòng sử dụng email khác hoặc đăng nhập.";
+        public const string PHONE_NOT_EXISTS_FOR_RESET = "Số điện thoại này không tồn tại trong hệ thống. Vui lòng kiểm tra lại hoặc đăng ký tài khoản mới.";
+        public const string PHONE_EXISTS_FOR_REGISTRATION = "Số điện thoại này đã được sử dụng. Vui lòng sử dụng số khác hoặc đăng nhập.";
     }
     
     public static class General

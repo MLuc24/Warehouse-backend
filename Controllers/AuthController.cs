@@ -163,19 +163,14 @@ public class AuthController : ControllerBase
 
             var result = await _authService.SendVerificationCodeWithPurposeAsync(request.Contact, request.Type, request.Purpose);
             
-            var message = request.Purpose switch
+            if (result.Success)
             {
-                VerificationConstants.Purposes.REGISTRATION => "Mã xác thực đăng ký đã được gửi.",
-                VerificationConstants.Purposes.FORGOT_PASSWORD => "Mã xác thực đặt lại mật khẩu đã được gửi.",
-                _ => "Mã xác thực đã được gửi."
-            };
-
-            return Ok(new VerificationResponseDto
+                return Ok(result);
+            }
+            else
             {
-                Success = result,
-                Message = result ? message : "Không thể gửi mã xác thực. Vui lòng thử lại sau.",
-                NextStep = result ? "Nhập mã xác thực 6 chữ số để tiếp tục." : null
-            });
+                return BadRequest(result);
+            }
         }
         catch (Exception ex)
         {

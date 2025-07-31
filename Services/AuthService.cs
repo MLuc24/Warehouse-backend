@@ -152,9 +152,93 @@ public class AuthService : IAuthService
     }
 
     // Public method for sending verification code with specific purpose
-    public async Task<bool> SendVerificationCodeWithPurposeAsync(string contact, string type, string purpose)
+    public async Task<VerificationResponseDto> SendVerificationCodeWithPurposeAsync(string contact, string type, string purpose)
     {
-        return await SendVerificationCodeInternalAsync(contact, type, purpose);
+        try
+        {
+            // Validation logic based on purpose
+            if (purpose == VerificationConstants.Purposes.REGISTRATION)
+            {
+                // For registration: email must NOT exist in database
+                if (type == VerificationConstants.Types.EMAIL)
+                {
+                    var existingUser = await _userRepository.GetByEmailAsync(contact);
+                    if (existingUser != null)
+                    {
+                        _logger.LogWarning("Registration attempt with existing email: {Email}", contact);
+                        return new VerificationResponseDto
+                        {
+                            Success = false,
+                            Message = ErrorMessages.Auth.EMAIL_EXISTS_FOR_REGISTRATION,
+                            NextStep = null
+                        };
+                    }
+                }
+                // Note: Phone validation can be added when phone repository methods are available
+            }
+            else if (purpose == VerificationConstants.Purposes.FORGOT_PASSWORD)
+            {
+                // For forgot password: email MUST exist in database
+                if (type == VerificationConstants.Types.EMAIL)
+                {
+                    var existingUser = await _userRepository.GetByEmailAsync(contact);
+                    if (existingUser == null)
+                    {
+                        _logger.LogWarning("Forgot password attempt with non-existing email: {Email}", contact);
+                        return new VerificationResponseDto
+                        {
+                            Success = false,
+                            Message = ErrorMessages.Auth.EMAIL_NOT_EXISTS_FOR_RESET,
+                            NextStep = null
+                        };
+                    }
+                }
+                // Note: Phone validation can be added when phone repository methods are available
+            }
+
+            var result = await SendVerificationCodeInternalAsync(contact, type, purpose);
+            
+            if (result)
+            {
+                var message = purpose switch
+                {
+                    VerificationConstants.Purposes.REGISTRATION => "Mã xác thực đăng ký đã được gửi.",
+                    VerificationConstants.Purposes.FORGOT_PASSWORD => "Mã xác thực đặt lại mật khẩu đã được gửi.",
+                    _ => "Mã xác thực đã được gửi."
+                };
+
+                return new VerificationResponseDto
+                {
+                    Success = true,
+                    Message = message,
+                    NextStep = "Nhập mã xác thực 6 chữ số để tiếp tục."
+                };
+            }
+            else
+            {
+                return new VerificationResponseDto
+                {
+                    Success = false,
+                    Message = purpose switch
+                    {
+                        VerificationConstants.Purposes.REGISTRATION => "Không thể gửi mã xác thực đăng ký. Vui lòng thử lại sau.",
+                        VerificationConstants.Purposes.FORGOT_PASSWORD => "Không thể gửi mã khôi phục mật khẩu. Vui lòng thử lại sau.",
+                        _ => "Không thể gửi mã xác thực. Vui lòng thử lại sau."
+                    },
+                    NextStep = null
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in SendVerificationCodeWithPurposeAsync for {Contact} with purpose {Purpose}", contact, purpose);
+            return new VerificationResponseDto
+            {
+                Success = false,
+                Message = "Có lỗi xảy ra khi gửi mã xác thực. Vui lòng thử lại sau.",
+                NextStep = null
+            };
+        }
     }
 
     // Public method for verifying code with specific purpose
@@ -167,10 +251,6 @@ public class AuthService : IAuthService
     {
         try
         {
-            // Bước 3: Complete registration
-            // Không cần kiểm tra verify lại vì đây là bước cuối sau khi đã verify thành công ở bước 2
-            // Frontend đảm bảo rằng chỉ có thể đến bước này sau khi verify thành công
-
             // Sử dụng ValidationService để kiểm tra logic nghiệp vụ
             var email = request.Type == VerificationConstants.Types.EMAIL ? request.Contact : null;
             var phoneNumber = request.Type == VerificationConstants.Types.PHONE ? request.Contact : null;

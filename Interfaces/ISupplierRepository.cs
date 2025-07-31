@@ -11,6 +11,7 @@ public interface ISupplierRepository
     Task<Supplier> CreateAsync(Supplier supplier);
     Task<Supplier?> UpdateAsync(int supplierId, Supplier supplier);
     Task<bool> DeleteAsync(int supplierId);
+    Task<bool> ReactivateAsync(int supplierId);
     
     // Additional queries
     Task<bool> ExistsAsync(int supplierId);

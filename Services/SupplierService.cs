@@ -76,6 +76,17 @@ public class SupplierService : ISupplierService
         return await _supplierRepository.DeleteAsync(supplierId);
     }
 
+    public async Task<bool> ReactivateSupplierAsync(int supplierId)
+    {
+        // Check if supplier exists and is expired
+        var supplier = await _supplierRepository.GetByIdAsync(supplierId);
+        if (supplier == null || supplier.Status != "Expired")
+            return false;
+
+        // Change supplier status back to Active
+        return await _supplierRepository.ReactivateAsync(supplierId);
+    }
+
     public async Task<bool> ValidateSupplierDataAsync(CreateSupplierDto createDto)
     {
         var errors = new List<string>();

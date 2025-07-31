@@ -219,6 +219,30 @@ public class SupplierController : ControllerBase
     }
 
     /// <summary>
+    /// Gia hạn nhà cung cấp (chuyển từ Expired về Active)
+    /// </summary>
+    [HttpPatch("{id}/reactivate")]
+    [Authorize(Roles = "Admin")] // Only Admin can reactivate
+    public async Task<ActionResult> ReactivateSupplier(int id)
+    {
+        try
+        {
+            var result = await _supplierService.ReactivateSupplierAsync(id);
+            if (!result)
+            {
+                return NotFound(new { message = "Không tìm thấy nhà cung cấp hoặc nhà cung cấp đã hoạt động" });
+            }
+
+            return Ok(new { message = "Nhà cung cấp đã được gia hạn và chuyển về trạng thái hoạt động" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while reactivating supplier {SupplierId}", id);
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi gia hạn nhà cung cấp" });
+        }
+    }
+
+    /// <summary>
     /// Lấy danh sách nhà cung cấp đang hoạt động (cho dropdown, selection)
     /// </summary>
     [HttpGet("active")]

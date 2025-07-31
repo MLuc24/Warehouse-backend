@@ -25,9 +25,7 @@ public class SupplierRepository : ISupplierRepository
 
     public async Task<SupplierListResponseDto> GetAllAsync(SupplierSearchDto searchDto)
     {
-        var query = _context.Suppliers
-            .Where(s => s.Status == "Active") // Only show active suppliers by default
-            .AsQueryable();
+        var query = _context.Suppliers.AsQueryable(); // Show all suppliers (Active and Expired)
 
         // Apply search filters
         if (!string.IsNullOrWhiteSpace(searchDto.SearchTerm))
@@ -126,6 +124,18 @@ public class SupplierRepository : ISupplierRepository
 
         // Instead of deleting, change status to Expired
         supplier.Status = "Expired";
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> ReactivateAsync(int supplierId)
+    {
+        var supplier = await _context.Suppliers.FindAsync(supplierId);
+        if (supplier == null || supplier.Status != "Expired")
+            return false;
+
+        // Change status back to Active
+        supplier.Status = "Active";
         await _context.SaveChangesAsync();
         return true;
     }

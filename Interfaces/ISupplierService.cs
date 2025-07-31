@@ -10,6 +10,7 @@ public interface ISupplierService
     Task<SupplierDto> CreateSupplierAsync(CreateSupplierDto createDto);
     Task<SupplierDto?> UpdateSupplierAsync(int supplierId, UpdateSupplierDto updateDto);
     Task<bool> DeleteSupplierAsync(int supplierId);
+    Task<bool> ReactivateSupplierAsync(int supplierId);
     
     // Validation
     Task<bool> ValidateSupplierDataAsync(CreateSupplierDto createDto);

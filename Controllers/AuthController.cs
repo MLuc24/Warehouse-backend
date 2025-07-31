@@ -95,7 +95,8 @@ public class AuthController : ControllerBase
             var userId = User.FindFirst(AuthConstants.ClaimTypes.USER_ID)?.Value;
             var username = User.FindFirst(AuthConstants.ClaimTypes.USERNAME)?.Value;
             var fullName = User.FindFirst(AuthConstants.ClaimTypes.FULL_NAME)?.Value;
-            var role = User.FindFirst(AuthConstants.ClaimTypes.ROLE)?.Value;
+            // Use standard .NET role claim type instead of custom one
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
 
             if (string.IsNullOrEmpty(userId))
             {

@@ -86,6 +86,17 @@ public class ProductService : IProductService
         return await _productRepository.DeleteAsync(productId);
     }
 
+    public async Task<bool> ReactivateProductAsync(int productId)
+    {
+        // Check if product exists and is inactive
+        var product = await _productRepository.GetByIdAsync(productId);
+        if (product == null || product.Status == true)
+            return false;
+
+        // Reactivate the product
+        return await _productRepository.ReactivateAsync(productId);
+    }
+
     public async Task<ProductDto?> GetProductBySkuAsync(string sku)
     {
         if (string.IsNullOrWhiteSpace(sku))
@@ -123,6 +134,16 @@ public class ProductService : IProductService
             throw new ArgumentException("Nhà cung cấp không tồn tại", nameof(supplierId));
 
         return await _productRepository.GetProductsBySupplierId(supplierId);
+    }
+
+    public async Task<List<ProductDto>> GetActiveProductsAsync()
+    {
+        return await _productRepository.GetActiveProductsAsync();
+    }
+
+    public async Task<bool> HasInventoryMovementsAsync(int productId)
+    {
+        return await _productRepository.HasInventoryMovementsAsync(productId);
     }
 
     #region Private Methods

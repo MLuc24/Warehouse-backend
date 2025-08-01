@@ -170,18 +170,20 @@ public class ProductRepository : IProductRepository
         if (product == null)
             return false;
 
-        // Check if product can be deleted (no inventory movements)
-        var hasMovements = await HasInventoryMovementsAsync(productId);
-        if (hasMovements)
-        {
-            // Soft delete by setting status to false
-            product.Status = false;
-            await _context.SaveChangesAsync();
-            return true;
-        }
+        // Always soft delete by setting status to false (same as supplier logic)
+        product.Status = false;
+        await _context.SaveChangesAsync();
+        return true;
+    }
 
-        // Hard delete if no movements
-        _context.Products.Remove(product);
+    public async Task<bool> ReactivateAsync(int productId)
+    {
+        var product = await _context.Products.FindAsync(productId);
+        if (product == null || product.Status == true)
+            return false;
+
+        // Reactivate the product by setting status to true
+        product.Status = true;
         await _context.SaveChangesAsync();
         return true;
     }
@@ -400,6 +402,32 @@ public class ProductRepository : IProductRepository
                 CreatedAt = p.CreatedAt,
                 CurrentStock = p.Inventories.Sum(i => i.Quantity)
             })
+            .ToListAsync();
+    }
+
+    public async Task<List<ProductDto>> GetActiveProductsAsync()
+    {
+        return await _context.Products
+            .Include(p => p.Supplier)
+            .Include(p => p.Inventories)
+            .Where(p => p.Status == true)
+            .Select(p => new ProductDto
+            {
+                ProductId = p.ProductId,
+                Sku = p.Sku,
+                ProductName = p.ProductName,
+                Description = p.Description,
+                SupplierId = p.SupplierId,
+                SupplierName = p.Supplier != null ? p.Supplier.SupplierName : null,
+                Unit = p.Unit,
+                PurchasePrice = p.PurchasePrice,
+                SellingPrice = p.SellingPrice,
+                ImageUrl = p.ImageUrl,
+                Status = p.Status,
+                CreatedAt = p.CreatedAt,
+                CurrentStock = p.Inventories.Sum(i => i.Quantity)
+            })
+            .OrderBy(p => p.ProductName)
             .ToListAsync();
     }
 }

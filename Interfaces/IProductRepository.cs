@@ -11,6 +11,7 @@ public interface IProductRepository
     Task<Product> CreateAsync(Product product);
     Task<Product?> UpdateAsync(int productId, Product product);
     Task<bool> DeleteAsync(int productId);
+    Task<bool> ReactivateAsync(int productId);
     
     // Additional queries
     Task<bool> ExistsAsync(int productId);
@@ -28,4 +29,7 @@ public interface IProductRepository
     
     // Supplier related
     Task<List<ProductDto>> GetProductsBySupplierId(int supplierId);
+    
+    // Active products for dropdowns/selection
+    Task<List<ProductDto>> GetActiveProductsAsync();
 }

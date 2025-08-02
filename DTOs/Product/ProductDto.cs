@@ -141,8 +141,6 @@ public class ProductInventoryDto
     public string ProductName { get; set; } = null!;
     public string Sku { get; set; } = null!;
     public string? Unit { get; set; }
-    public int WarehouseId { get; set; }
-    public string WarehouseName { get; set; } = null!;
     public int CurrentStock { get; set; }
     public int MinStock { get; set; }
     public int MaxStock { get; set; }

@@ -327,10 +327,9 @@ public class ProductRepository : IProductRepository
     public async Task<List<ProductInventoryDto>> GetLowStockProductsAsync()
     {
         // For now, consider products with stock < 10 as low stock
-        // In a real implementation, this would be configurable per product/warehouse
+        // In a real implementation, this would be configurable per product
         return await _context.Inventories
             .Include(i => i.Product)
-            .Include(i => i.Warehouse)
             .Where(i => i.Quantity < 10)
             .Select(i => new ProductInventoryDto
             {
@@ -338,8 +337,6 @@ public class ProductRepository : IProductRepository
                 ProductName = i.Product != null ? i.Product.ProductName : "",
                 Sku = i.Product != null ? i.Product.Sku : "",
                 Unit = i.Product != null ? i.Product.Unit : null,
-                WarehouseId = i.WarehouseId,
-                WarehouseName = i.Warehouse != null ? i.Warehouse.WarehouseName : "",
                 CurrentStock = i.Quantity,
                 MinStock = 10,
                 MaxStock = 100,
@@ -361,7 +358,6 @@ public class ProductRepository : IProductRepository
     {
         return await _context.Inventories
             .Include(i => i.Product)
-            .Include(i => i.Warehouse)
             .Where(i => i.ProductId == productId)
             .Select(i => new ProductInventoryDto
             {
@@ -369,8 +365,6 @@ public class ProductRepository : IProductRepository
                 ProductName = i.Product != null ? i.Product.ProductName : "",
                 Sku = i.Product != null ? i.Product.Sku : "",
                 Unit = i.Product != null ? i.Product.Unit : null,
-                WarehouseId = i.WarehouseId,
-                WarehouseName = i.Warehouse != null ? i.Warehouse.WarehouseName : "",
                 CurrentStock = i.Quantity,
                 MinStock = 10,
                 MaxStock = 100,

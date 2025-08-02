@@ -9,8 +9,6 @@ public partial class GoodsReceipt
 
     public int SupplierId { get; set; }
 
-    public int WarehouseId { get; set; }
-
     public int CreatedByUserId { get; set; }
 
     public DateTime? ReceiptDate { get; set; }
@@ -26,6 +24,4 @@ public partial class GoodsReceipt
     public virtual ICollection<GoodsReceiptDetail> GoodsReceiptDetails { get; set; } = new List<GoodsReceiptDetail>();
 
     public virtual Supplier Supplier { get; set; } = null!;
-
-    public virtual Warehouse Warehouse { get; set; } = null!;
 }

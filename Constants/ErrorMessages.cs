@@ -33,6 +33,21 @@ public static class ErrorMessages
         public const string PHONE_EXISTS_FOR_REGISTRATION = "Số điện thoại này đã được sử dụng. Vui lòng sử dụng số khác hoặc đăng nhập.";
     }
     
+    public static class Warehouse
+    {
+        public const string NOT_FOUND = "Không tìm thấy kho hàng";
+        public const string ALREADY_EXISTS = "Kho hàng đã tồn tại";
+        public const string IN_USE = "Kho hàng đang được sử dụng, không thể xóa";
+        public const string INVALID_DATA = "Dữ liệu kho hàng không hợp lệ";
+        public const string INVALID_ID = "ID kho hàng không hợp lệ";
+        public const string CREATE_FAILED = "Tạo kho hàng thất bại";
+        public const string UPDATE_FAILED = "Cập nhật kho hàng thất bại";
+        public const string DELETE_FAILED = "Xóa kho hàng thất bại";
+        public const string NAME_ALREADY_EXISTS = "Tên kho hàng đã tồn tại";
+        public const string ADDRESS_ALREADY_EXISTS = "Địa chỉ kho hàng đã tồn tại";
+        public const string CANNOT_DELETE_HAS_INVENTORY = "Không thể xóa kho hàng có tồn kho";
+    }
+    
     public static class General
     {
         public const string INVALID_INPUT = "Dữ liệu đầu vào không hợp lệ";

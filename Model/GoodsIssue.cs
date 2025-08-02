@@ -9,8 +9,6 @@ public partial class GoodsIssue
 
     public int CustomerId { get; set; }
 
-    public int WarehouseId { get; set; }
-
     public int CreatedByUserId { get; set; }
 
     public DateTime? IssueDate { get; set; }
@@ -26,6 +24,4 @@ public partial class GoodsIssue
     public virtual Customer Customer { get; set; } = null!;
 
     public virtual ICollection<GoodsIssueDetail> GoodsIssueDetails { get; set; } = new List<GoodsIssueDetail>();
-
-    public virtual Warehouse Warehouse { get; set; } = null!;
 }

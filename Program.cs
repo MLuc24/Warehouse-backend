@@ -31,14 +31,12 @@ builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<WarehouseManage.Interfaces.IUserRepository, WarehouseManage.Repositories.UserRepository>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierRepository, WarehouseManage.Repositories.SupplierRepository>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IProductRepository, WarehouseManage.Repositories.ProductRepository>();
-builder.Services.AddScoped<WarehouseManage.Interfaces.IWarehouseRepository, WarehouseManage.Repositories.WarehouseRepository>();
 
 // Register services
 builder.Services.AddScoped<WarehouseManage.Interfaces.IAuthService, WarehouseManage.Services.AuthService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IVerificationService, WarehouseManage.Services.VerificationService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierService, WarehouseManage.Services.SupplierService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IProductService, WarehouseManage.Services.ProductService>();
-builder.Services.AddScoped<WarehouseManage.Interfaces.IWarehouseService, WarehouseManage.Services.WarehouseService>();
 
 // Register notification service
 builder.Services.AddScoped<WarehouseManage.Interfaces.INotificationService, WarehouseManage.Services.Communication.NotificationService>();

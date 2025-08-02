@@ -36,8 +36,6 @@ public partial class WarehouseDbContext : DbContext
 
     public virtual DbSet<VerificationCode> VerificationCodes { get; set; }
 
-    public virtual DbSet<Warehouse> Warehouses { get; set; }
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         // Connection string sẽ được inject từ Program.cs
@@ -89,11 +87,6 @@ public partial class WarehouseDbContext : DbContext
                 .HasForeignKey(d => d.CustomerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_GoodsIssues_Customers");
-
-            entity.HasOne(d => d.Warehouse).WithMany(p => p.GoodsIssues)
-                .HasForeignKey(d => d.WarehouseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_GoodsIssues_Warehouses");
         });
 
         modelBuilder.Entity<GoodsIssueDetail>(entity =>
@@ -138,11 +131,6 @@ public partial class WarehouseDbContext : DbContext
                 .HasForeignKey(d => d.SupplierId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_GoodsReceipts_Suppliers");
-
-            entity.HasOne(d => d.Warehouse).WithMany(p => p.GoodsReceipts)
-                .HasForeignKey(d => d.WarehouseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_GoodsReceipts_Warehouses");
         });
 
         modelBuilder.Entity<GoodsReceiptDetail>(entity =>
@@ -166,7 +154,7 @@ public partial class WarehouseDbContext : DbContext
 
         modelBuilder.Entity<Inventory>(entity =>
         {
-            entity.HasKey(e => new { e.WarehouseId, e.ProductId }).HasName("PK__Inventor__ED4863951E874FD8");
+            entity.HasKey(e => e.ProductId).HasName("PK__Inventory__B40CC6CD86230D33");
 
             entity.ToTable("Inventory");
 
@@ -178,11 +166,6 @@ public partial class WarehouseDbContext : DbContext
                 .HasForeignKey(d => d.ProductId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Inventory_Products");
-
-            entity.HasOne(d => d.Warehouse).WithMany(p => p.Inventories)
-                .HasForeignKey(d => d.WarehouseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Inventory_Warehouses");
         });
 
         modelBuilder.Entity<Product>(entity =>
@@ -295,19 +278,6 @@ public partial class WarehouseDbContext : DbContext
 
             // Index for performance
             entity.HasIndex(e => new { e.Contact, e.Code, e.Purpose });
-        });
-
-        modelBuilder.Entity<Warehouse>(entity =>
-        {
-            entity.HasKey(e => e.WarehouseId).HasName("PK__Warehous__2608AFF9157E6E1B");
-
-            entity.Property(e => e.ContactPhone)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.WarehouseName).HasMaxLength(255);
         });
 
         OnModelCreatingPartial(modelBuilder);

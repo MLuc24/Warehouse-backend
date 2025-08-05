@@ -335,4 +335,23 @@ public class ProductController : ControllerBase
             return StatusCode(500, new { message = "Đã xảy ra lỗi khi lấy danh sách sản phẩm đang hoạt động" });
         }
     }
+
+    /// <summary>
+    /// Kiểm tra xem sản phẩm có chuyển động kho không
+    /// </summary>
+    [HttpGet("{id}/has-inventory-movements")]
+    [Authorize(Roles = "Admin,Manager,Employee")] // All roles can access
+    public async Task<ActionResult<bool>> HasInventoryMovements(int id)
+    {
+        try
+        {
+            var hasMovements = await _productService.HasInventoryMovementsAsync(id);
+            return Ok(hasMovements);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while checking inventory movements for product {ProductId}", id);
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi kiểm tra chuyển động kho của sản phẩm" });
+        }
+    }
 }

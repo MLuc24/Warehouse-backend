@@ -15,6 +15,10 @@ public partial class Customer
 
     public string? Email { get; set; }
 
+    // 🧋 THÊM MỚI - Phân loại khách hàng đơn giản
+    public string CustomerType { get; set; } = "Regular"; // Regular, VIP, Wholesale
+    public string Status { get; set; } = "Active";        // Active, Inactive
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual ICollection<GoodsIssue> GoodsIssues { get; set; } = new List<GoodsIssue>();

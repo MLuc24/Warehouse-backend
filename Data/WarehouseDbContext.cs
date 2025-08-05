@@ -36,6 +36,8 @@ public partial class WarehouseDbContext : DbContext
 
     public virtual DbSet<VerificationCode> VerificationCodes { get; set; }
 
+    public virtual DbSet<Category> Categories { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         // Connection string sẽ được inject từ Program.cs
@@ -193,6 +195,10 @@ public partial class WarehouseDbContext : DbContext
             entity.HasOne(d => d.Supplier).WithMany(p => p.Products)
                 .HasForeignKey(d => d.SupplierId)
                 .HasConstraintName("FK_Products_Suppliers");
+
+            entity.HasOne(d => d.Category).WithMany(p => p.Products)
+                .HasForeignKey(d => d.CategoryId)
+                .HasConstraintName("FK_Products_Categories");
         });
 
         modelBuilder.Entity<Supplier>(entity =>
@@ -278,6 +284,45 @@ public partial class WarehouseDbContext : DbContext
 
             // Index for performance
             entity.HasIndex(e => new { e.Contact, e.Code, e.Purpose });
+        });
+
+        modelBuilder.Entity<Category>(entity =>
+        {
+            entity.HasKey(e => e.CategoryId).HasName("PK__Category__19093A0B5F8A3BC2");
+
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.Description)
+                .HasMaxLength(500);
+
+            entity.Property(e => e.Icon)
+                .HasMaxLength(50);
+
+            entity.Property(e => e.Color)
+                .HasMaxLength(20);
+
+            entity.Property(e => e.StorageType)
+                .HasMaxLength(50);
+
+            entity.Property(e => e.IsPerishable)
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.Status)
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime");
+
+            // Unique constraint cho tên danh mục
+            entity.HasIndex(e => e.Name)
+                .IsUnique()
+                .HasDatabaseName("IX_Category_Name");
         });
 
         OnModelCreatingPartial(modelBuilder);

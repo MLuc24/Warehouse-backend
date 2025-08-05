@@ -14,6 +14,14 @@ public class ProductDto
     public decimal? PurchasePrice { get; set; }
     public decimal? SellingPrice { get; set; }
     public string? ImageUrl { get; set; }
+    
+    // TocoToco specific fields
+    public string? Category { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public int? MinStockLevel { get; set; }
+    public string? StorageType { get; set; }
+    public bool IsPerishable { get; set; }
+    
     public bool? Status { get; set; }
     public DateTime? CreatedAt { get; set; }
     
@@ -22,6 +30,13 @@ public class ProductDto
     public int TotalIssued { get; set; }
     public int TotalReceived { get; set; }
     public decimal? TotalValue { get; set; }
+    
+    // Calculated fields
+    public decimal? ProfitMargin => SellingPrice.HasValue && PurchasePrice.HasValue && PurchasePrice > 0 
+        ? ((SellingPrice.Value - PurchasePrice.Value) / PurchasePrice.Value) * 100 
+        : null;
+    public bool IsLowStock => MinStockLevel.HasValue && CurrentStock <= MinStockLevel.Value;
+    public bool IsExpiringSoon => ExpiryDate.HasValue && (ExpiryDate.Value - DateTime.Now).TotalDays <= 7;
 }
 
 public class CreateProductDto
@@ -51,6 +66,20 @@ public class CreateProductDto
     [Url(ErrorMessage = "URL hình ảnh không hợp lệ")]
     [StringLength(500, ErrorMessage = "URL hình ảnh không được vượt quá 500 ký tự")]
     public string? ImageUrl { get; set; }
+
+    // TocoToco specific fields
+    [StringLength(100, ErrorMessage = "Danh mục không được vượt quá 100 ký tự")]
+    public string? Category { get; set; }
+
+    public DateTime? ExpiryDate { get; set; }
+
+    [Range(0, int.MaxValue, ErrorMessage = "Mức tồn kho tối thiểu phải >= 0")]
+    public int? MinStockLevel { get; set; }
+
+    [StringLength(50, ErrorMessage = "Loại lưu trữ không được vượt quá 50 ký tự")]
+    public string? StorageType { get; set; }
+
+    public bool IsPerishable { get; set; } = false;
 
     public bool? Status { get; set; } = true;
 }
@@ -83,6 +112,20 @@ public class UpdateProductDto
     [StringLength(500, ErrorMessage = "URL hình ảnh không được vượt quá 500 ký tự")]
     public string? ImageUrl { get; set; }
 
+    // TocoToco specific fields
+    [StringLength(100, ErrorMessage = "Danh mục không được vượt quá 100 ký tự")]
+    public string? Category { get; set; }
+
+    public DateTime? ExpiryDate { get; set; }
+
+    [Range(0, int.MaxValue, ErrorMessage = "Mức tồn kho tối thiểu phải >= 0")]
+    public int? MinStockLevel { get; set; }
+
+    [StringLength(50, ErrorMessage = "Loại lưu trữ không được vượt quá 50 ký tự")]
+    public string? StorageType { get; set; }
+
+    public bool IsPerishable { get; set; } = false;
+
     public bool? Status { get; set; }
 }
 
@@ -95,6 +138,16 @@ public class ProductSearchDto
     public decimal? MinPrice { get; set; }
     public decimal? MaxPrice { get; set; }
     public bool? Status { get; set; }
+    
+    // TocoToco specific search fields
+    public string? Category { get; set; }
+    public DateTime? ExpiryFromDate { get; set; }
+    public DateTime? ExpiryToDate { get; set; }
+    public string? StorageType { get; set; }
+    public bool? IsPerishable { get; set; }
+    public bool? IsLowStock { get; set; }
+    public bool? IsExpiringSoon { get; set; }
+    
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
     public string? SortBy { get; set; } = "ProductName";

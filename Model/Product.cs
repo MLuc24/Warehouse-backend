@@ -23,6 +23,15 @@ public partial class Product
 
     public string? ImageUrl { get; set; }
 
+    // 🧋 THÊM MỚI cho TocoToco - Liên kết với Category model
+    public int? CategoryId { get; set; }                  // Foreign key tới Category
+    public DateTime? ExpiryDate { get; set; }             // Hạn sử dụng (QUAN TRỌNG cho F&B)
+    public int? MinStockLevel { get; set; }               // Mức cảnh báo hết hàng  
+    public int? MaxStockLevel { get; set; }               // Mức tồn kho tối đa
+    public string? StorageType { get; set; }              // "Lạnh", "Khô", "Đông lạnh"
+    public bool IsPerishable { get; set; } = false;      // Hàng dễ hỏng không?
+    public DateTime? UpdatedAt { get; set; }              // Ngày cập nhật
+
     public bool? Status { get; set; }
 
     public DateTime? CreatedAt { get; set; }
@@ -34,4 +43,7 @@ public partial class Product
     public virtual ICollection<Inventory> Inventories { get; set; } = new List<Inventory>();
 
     public virtual Supplier? Supplier { get; set; }
+
+    // Navigation property cho Category
+    public virtual Category? Category { get; set; }
 }

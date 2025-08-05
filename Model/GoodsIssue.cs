@@ -7,6 +7,9 @@ public partial class GoodsIssue
 {
     public int GoodsIssueId { get; set; }
 
+    // 🧋 THÊM MỚI - Số phiếu xuất cho dễ tracking
+    public string IssueNumber { get; set; } = null!;     // VD: XK20250803001
+
     public int CustomerId { get; set; }
 
     public int CreatedByUserId { get; set; }

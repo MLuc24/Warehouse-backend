@@ -7,6 +7,9 @@ public partial class GoodsReceipt
 {
     public int GoodsReceiptId { get; set; }
 
+    // 🧋 THÊM MỚI - Số phiếu nhập cho dễ tracking
+    public string ReceiptNumber { get; set; } = null!;   // VD: NK20250803001
+
     public int SupplierId { get; set; }
 
     public int CreatedByUserId { get; set; }

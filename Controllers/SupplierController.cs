@@ -222,7 +222,7 @@ public class SupplierController : ControllerBase
     /// Gia hạn nhà cung cấp (chuyển từ Expired về Active)
     /// </summary>
     [HttpPatch("{id}/reactivate")]
-    [Authorize(Roles = "Admin")] // Only Admin can reactivate
+    [Authorize(Roles = "Admin,Manager")] // Admin and Manager can reactivate
     public async Task<ActionResult> ReactivateSupplier(int id)
     {
         try

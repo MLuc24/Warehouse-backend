@@ -18,7 +18,11 @@ if (File.Exists(envFilePath))
 builder.Configuration.AddEnvironmentVariables();
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // Configure Entity Framework
 builder.Services.AddDbContext<WarehouseDbContext>(options =>
@@ -37,6 +41,12 @@ builder.Services.AddScoped<WarehouseManage.Interfaces.IAuthService, WarehouseMan
 builder.Services.AddScoped<WarehouseManage.Interfaces.IVerificationService, WarehouseManage.Services.VerificationService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierService, WarehouseManage.Services.SupplierService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IProductService, WarehouseManage.Services.ProductService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IProductStockService, WarehouseManage.Services.ProductStockService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IProductPricingService, WarehouseManage.Services.ProductPricingService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IProductExpiryService, WarehouseManage.Services.ProductExpiryService>();
+
+// Register Category service
+builder.Services.AddScoped<WarehouseManage.Interfaces.ICategoryService, WarehouseManage.Services.CategoryService>();
 
 // Register notification service
 builder.Services.AddScoped<WarehouseManage.Interfaces.INotificationService, WarehouseManage.Services.Communication.NotificationService>();

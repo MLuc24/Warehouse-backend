@@ -55,7 +55,7 @@ public class NotificationService : INotificationService
                 From = new MailAddress(fromEmail, fromName),
                 Subject = subject,
                 Body = body,
-                IsBodyHtml = false
+                IsBodyHtml = true // Enable HTML email
             };
             
             mailMessage.To.Add(to);

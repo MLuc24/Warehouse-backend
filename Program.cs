@@ -35,6 +35,7 @@ builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<WarehouseManage.Interfaces.IUserRepository, WarehouseManage.Repositories.UserRepository>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierRepository, WarehouseManage.Repositories.SupplierRepository>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IProductRepository, WarehouseManage.Repositories.ProductRepository>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsReceiptRepository, WarehouseManage.Repositories.GoodsReceiptRepository>();
 
 // Register services
 builder.Services.AddScoped<WarehouseManage.Interfaces.IAuthService, WarehouseManage.Services.AuthService>();
@@ -44,6 +45,8 @@ builder.Services.AddScoped<WarehouseManage.Interfaces.IProductService, Warehouse
 builder.Services.AddScoped<WarehouseManage.Interfaces.IProductStockService, WarehouseManage.Services.ProductStockService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IProductPricingService, WarehouseManage.Services.ProductPricingService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IProductExpiryService, WarehouseManage.Services.ProductExpiryService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsReceiptService, WarehouseManage.Services.GoodsReceiptService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsReceiptWorkflowService, WarehouseManage.Services.GoodsReceiptWorkflowService>();
 
 // Register Category service
 builder.Services.AddScoped<WarehouseManage.Interfaces.ICategoryService, WarehouseManage.Services.CategoryService>();

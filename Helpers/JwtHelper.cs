@@ -21,11 +21,11 @@ public class JwtHelper
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(AuthConstants.ClaimTypes.USER_ID, user.UserId.ToString()),
             new Claim(AuthConstants.ClaimTypes.USERNAME, user.Username),
-            new Claim(AuthConstants.ClaimTypes.ROLE, user.Role),
+            new Claim(System.Security.Claims.ClaimTypes.Role, user.Role), // Use standard role claim
             new Claim(AuthConstants.ClaimTypes.FULL_NAME, user.FullName),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)

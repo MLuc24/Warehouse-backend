@@ -129,6 +129,16 @@ public partial class WarehouseDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_GoodsReceipts_Users");
 
+            entity.HasOne(d => d.ApprovedByUser).WithMany()
+                .HasForeignKey(d => d.ApprovedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_GoodsReceipts_ApprovedByUsers");
+
+            entity.HasOne(d => d.CompletedByUser).WithMany()
+                .HasForeignKey(d => d.CompletedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_GoodsReceipts_CompletedByUsers");
+
             entity.HasOne(d => d.Supplier).WithMany(p => p.GoodsReceipts)
                 .HasForeignKey(d => d.SupplierId)
                 .OnDelete(DeleteBehavior.ClientSetNull)

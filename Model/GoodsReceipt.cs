@@ -22,7 +22,21 @@ public partial class GoodsReceipt
 
     public string? Status { get; set; }
 
+    // Workflow tracking fields
+    public int? ApprovedByUserId { get; set; }
+    public DateTime? ApprovedDate { get; set; }
+    public string? ApprovalNotes { get; set; }
+    
+    public bool? SupplierConfirmed { get; set; }
+    public DateTime? SupplierConfirmedDate { get; set; }
+    public string? SupplierConfirmationToken { get; set; } // For email confirmation link
+    
+    public int? CompletedByUserId { get; set; }
+    public DateTime? CompletedDate { get; set; }
+
     public virtual User CreatedByUser { get; set; } = null!;
+    public virtual User? ApprovedByUser { get; set; }
+    public virtual User? CompletedByUser { get; set; }
 
     public virtual ICollection<GoodsReceiptDetail> GoodsReceiptDetails { get; set; } = new List<GoodsReceiptDetail>();
 

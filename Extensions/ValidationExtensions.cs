@@ -20,6 +20,28 @@ public static class ValidationExtensions
     public static bool IsNotEmpty(this string? value) => !string.IsNullOrWhiteSpace(value);
     
     /// <summary>
+    /// Check if quantity is valid for goods receipt
+    /// </summary>
+    public static bool IsValidQuantity(this int quantity) => quantity > 0 && quantity <= 999999;
+    
+    /// <summary>
+    /// Check if unit price is valid for goods receipt
+    /// </summary>
+    public static bool IsValidUnitPrice(this decimal unitPrice) => unitPrice > 0 && unitPrice <= 999999999.99m;
+    
+    /// <summary>
+    /// Check if receipt number follows the correct format
+    /// </summary>
+    public static bool IsValidReceiptNumber(this string? receiptNumber)
+    {
+        if (string.IsNullOrWhiteSpace(receiptNumber))
+            return false;
+            
+        // Format: GR20250806001 (GR + YYYYMMDD + 3 digits)
+        return Regex.IsMatch(receiptNumber, @"^GR\d{8}\d{3}$");
+    }
+    
+    /// <summary>
     /// Basic email validation using .NET built-in validator
     /// Used only for business logic validation, not UI feedback
     /// </summary>

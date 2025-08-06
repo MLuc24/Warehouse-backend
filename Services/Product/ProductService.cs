@@ -31,6 +31,7 @@ public class ProductService : IProductService
         
         // Add calculated fields
         productDto.SupplierName = product.Supplier?.SupplierName;
+        productDto.CategoryName = product.Category?.Name; // Add missing CategoryName mapping
         productDto.CurrentStock = product.Inventories.Sum(i => i.Quantity);
         productDto.TotalReceived = product.GoodsReceiptDetails.Sum(grd => grd.Quantity);
         productDto.TotalIssued = product.GoodsIssueDetails.Sum(gid => gid.Quantity);

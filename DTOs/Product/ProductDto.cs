@@ -10,15 +10,17 @@ public class ProductDto
     public string? Description { get; set; }
     public int? SupplierId { get; set; }
     public string? SupplierName { get; set; } // For display purposes
+    public int? CategoryId { get; set; }
+    public string? CategoryName { get; set; } // For display purposes
     public string? Unit { get; set; }
     public decimal? PurchasePrice { get; set; }
     public decimal? SellingPrice { get; set; }
     public string? ImageUrl { get; set; }
     
     // TocoToco specific fields
-    public string? Category { get; set; }
     public DateTime? ExpiryDate { get; set; }
     public int? MinStockLevel { get; set; }
+    public int? MaxStockLevel { get; set; }
     public string? StorageType { get; set; }
     public bool IsPerishable { get; set; }
     
@@ -68,13 +70,15 @@ public class CreateProductDto
     public string? ImageUrl { get; set; }
 
     // TocoToco specific fields
-    [StringLength(100, ErrorMessage = "Danh mục không được vượt quá 100 ký tự")]
-    public string? Category { get; set; }
-
+    public int? CategoryId { get; set; }
+    
     public DateTime? ExpiryDate { get; set; }
 
     [Range(0, int.MaxValue, ErrorMessage = "Mức tồn kho tối thiểu phải >= 0")]
     public int? MinStockLevel { get; set; }
+
+    [Range(0, int.MaxValue, ErrorMessage = "Mức tồn kho tối đa phải >= 0")]
+    public int? MaxStockLevel { get; set; }
 
     [StringLength(50, ErrorMessage = "Loại lưu trữ không được vượt quá 50 ký tự")]
     public string? StorageType { get; set; }
@@ -113,13 +117,15 @@ public class UpdateProductDto
     public string? ImageUrl { get; set; }
 
     // TocoToco specific fields
-    [StringLength(100, ErrorMessage = "Danh mục không được vượt quá 100 ký tự")]
-    public string? Category { get; set; }
-
+    public int? CategoryId { get; set; }
+    
     public DateTime? ExpiryDate { get; set; }
 
     [Range(0, int.MaxValue, ErrorMessage = "Mức tồn kho tối thiểu phải >= 0")]
     public int? MinStockLevel { get; set; }
+
+    [Range(0, int.MaxValue, ErrorMessage = "Mức tồn kho tối đa phải >= 0")]
+    public int? MaxStockLevel { get; set; }
 
     [StringLength(50, ErrorMessage = "Loại lưu trữ không được vượt quá 50 ký tự")]
     public string? StorageType { get; set; }
@@ -140,7 +146,7 @@ public class ProductSearchDto
     public bool? Status { get; set; }
     
     // TocoToco specific search fields
-    public string? Category { get; set; }
+    public int? CategoryId { get; set; }
     public DateTime? ExpiryFromDate { get; set; }
     public DateTime? ExpiryToDate { get; set; }
     public string? StorageType { get; set; }

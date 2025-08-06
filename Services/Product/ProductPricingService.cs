@@ -20,20 +20,19 @@ public class ProductPricingService : IProductPricingService
     {
         try
         {
-            var pricingInfo = await _context.Products
-                .Select(p => new ProductPricingDto
-                {
-                    ProductId = p.ProductId,
-                    Sku = p.Sku,
-                    ProductName = p.ProductName,
-                    PurchasePrice = p.PurchasePrice,
-                    SellingPrice = p.SellingPrice,
-                    LastPriceUpdate = p.CreatedAt // In real app, you'd have a LastPriceUpdate field
-                })
-                .OrderBy(p => p.ProductName)
-                .ToListAsync();
-
-            return pricingInfo;
+        var pricingInfo = await _context.Products
+            .Select(p => new ProductPricingDto
+            {
+                ProductId = p.ProductId,
+                Sku = p.Sku,
+                ProductName = p.ProductName,
+                ImageUrl = p.ImageUrl,
+                PurchasePrice = p.PurchasePrice,
+                SellingPrice = p.SellingPrice,
+                LastPriceUpdate = p.CreatedAt // In real app, you'd have a LastPriceUpdate field
+            })
+            .OrderBy(p => p.ProductName)
+            .ToListAsync();            return pricingInfo;
         }
         catch (Exception ex)
         {
@@ -53,6 +52,7 @@ public class ProductPricingService : IProductPricingService
                     ProductId = p.ProductId,
                     Sku = p.Sku,
                     ProductName = p.ProductName,
+                    ImageUrl = p.ImageUrl,
                     PurchasePrice = p.PurchasePrice,
                     SellingPrice = p.SellingPrice,
                     LastPriceUpdate = p.CreatedAt

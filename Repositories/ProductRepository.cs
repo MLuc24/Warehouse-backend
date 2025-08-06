@@ -19,6 +19,7 @@ public class ProductRepository : IProductRepository
     {
         return await _context.Products
             .Include(p => p.Supplier)
+            .Include(p => p.Category)
             .Include(p => p.Inventories)
             .Include(p => p.GoodsReceiptDetails)
             .Include(p => p.GoodsIssueDetails)
@@ -29,6 +30,7 @@ public class ProductRepository : IProductRepository
     {
         var query = _context.Products
             .Include(p => p.Supplier)
+            .Include(p => p.Category)
             .AsQueryable();
 
         // Apply search filters
@@ -71,6 +73,44 @@ public class ProductRepository : IProductRepository
             query = query.Where(p => p.Status == searchDto.Status.Value);
         }
 
+        // TocoToco specific filters
+        if (searchDto.CategoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryId == searchDto.CategoryId.Value);
+        }
+
+        if (searchDto.ExpiryFromDate.HasValue)
+        {
+            query = query.Where(p => p.ExpiryDate >= searchDto.ExpiryFromDate.Value);
+        }
+
+        if (searchDto.ExpiryToDate.HasValue)
+        {
+            query = query.Where(p => p.ExpiryDate <= searchDto.ExpiryToDate.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchDto.StorageType))
+        {
+            query = query.Where(p => p.StorageType == searchDto.StorageType);
+        }
+
+        if (searchDto.IsPerishable.HasValue)
+        {
+            query = query.Where(p => p.IsPerishable == searchDto.IsPerishable.Value);
+        }
+
+        if (searchDto.IsLowStock == true)
+        {
+            query = query.Where(p => p.MinStockLevel.HasValue && 
+                _context.Inventories.Where(i => i.ProductId == p.ProductId).Sum(i => i.Quantity) <= p.MinStockLevel.Value);
+        }
+
+        if (searchDto.IsExpiringSoon == true)
+        {
+            var sevenDaysFromNow = DateTime.UtcNow.AddDays(7);
+            query = query.Where(p => p.ExpiryDate.HasValue && p.ExpiryDate.Value <= sevenDaysFromNow);
+        }
+
         // Get total count before pagination
         var totalCount = await query.CountAsync();
 
@@ -110,10 +150,17 @@ public class ProductRepository : IProductRepository
                 Description = p.Description,
                 SupplierId = p.SupplierId,
                 SupplierName = p.Supplier != null ? p.Supplier.SupplierName : null,
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category != null ? p.Category.Name : null,
                 Unit = p.Unit,
                 PurchasePrice = p.PurchasePrice,
                 SellingPrice = p.SellingPrice,
                 ImageUrl = p.ImageUrl,
+                ExpiryDate = p.ExpiryDate,
+                MinStockLevel = p.MinStockLevel,
+                MaxStockLevel = p.MaxStockLevel,
+                StorageType = p.StorageType,
+                IsPerishable = p.IsPerishable,
                 Status = p.Status,
                 CreatedAt = p.CreatedAt,
                 CurrentStock = p.Inventories.Sum(i => i.Quantity),
@@ -159,6 +206,15 @@ public class ProductRepository : IProductRepository
         existingProduct.SellingPrice = product.SellingPrice;
         existingProduct.ImageUrl = product.ImageUrl;
         existingProduct.Status = product.Status;
+        
+        // 🧋 TOCOТOCO specific fields - Missing updates!
+        existingProduct.CategoryId = product.CategoryId;
+        existingProduct.ExpiryDate = product.ExpiryDate;
+        existingProduct.MinStockLevel = product.MinStockLevel;
+        existingProduct.MaxStockLevel = product.MaxStockLevel;
+        existingProduct.StorageType = product.StorageType;
+        existingProduct.IsPerishable = product.IsPerishable;
+        existingProduct.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return existingProduct;

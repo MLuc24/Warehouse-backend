@@ -10,6 +10,7 @@ public class ProductExpiryDto
     public int ProductId { get; set; }
     public string Sku { get; set; } = null!;
     public string ProductName { get; set; } = null!;
+    public string? ImageUrl { get; set; }
     public string? Category { get; set; }
     public DateTime? ExpiryDate { get; set; }
     public bool IsPerishable { get; set; }

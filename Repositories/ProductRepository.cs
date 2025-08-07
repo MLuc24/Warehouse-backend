@@ -31,6 +31,9 @@ public class ProductRepository : IProductRepository
         var query = _context.Products
             .Include(p => p.Supplier)
             .Include(p => p.Category)
+            .Include(p => p.Inventories)
+            .Include(p => p.GoodsReceiptDetails)
+            .Include(p => p.GoodsIssueDetails)
             .AsQueryable();
 
         // Apply search filters
@@ -459,6 +462,7 @@ public class ProductRepository : IProductRepository
     {
         return await _context.Products
             .Include(p => p.Supplier)
+            .Include(p => p.Category)
             .Include(p => p.Inventories)
             .Where(p => p.Status == true)
             .Select(p => new ProductDto
@@ -469,6 +473,8 @@ public class ProductRepository : IProductRepository
                 Description = p.Description,
                 SupplierId = p.SupplierId,
                 SupplierName = p.Supplier != null ? p.Supplier.SupplierName : null,
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category != null ? p.Category.Name : null,
                 Unit = p.Unit,
                 PurchasePrice = p.PurchasePrice,
                 SellingPrice = p.SellingPrice,

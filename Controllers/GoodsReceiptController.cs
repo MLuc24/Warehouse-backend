@@ -4,6 +4,7 @@ using System.Security.Claims;
 using WarehouseManage.Constants;
 using WarehouseManage.DTOs.GoodsReceipt;
 using WarehouseManage.Interfaces;
+using WarehouseManage.Services;
 
 namespace WarehouseManage.Controllers;
 
@@ -293,28 +294,7 @@ public class GoodsReceiptController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Gửi lại email xác nhận cho nhà cung cấp
-    /// </summary>
-    [HttpPost("{id}/resend-supplier-email")]
-    [Authorize(Roles = "Admin,Manager")]
-    public async Task<IActionResult> ResendSupplierEmail(int id)
-    {
-        try
-        {
-            var result = await _workflowService.SendSupplierConfirmationEmailAsync(id);
-            if (!result)
-            {
-                return BadRequest(new { message = "Không thể gửi email xác nhận" });
-            }
 
-            return Ok(new { message = "Email xác nhận đã được gửi cho nhà cung cấp" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Lỗi khi gửi email", error = ex.Message });
-        }
-    }
 
     /// <summary>
     /// Nhà cung cấp xác nhận phiếu nhập qua link email (GET request)
@@ -434,6 +414,117 @@ public class GoodsReceiptController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "Lỗi khi hoàn thành phiếu nhập", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Hủy phiếu nhập (User can cancel when AwaitingApproval)
+    /// </summary>
+    [HttpPost("{id}/cancel")]
+    public async Task<IActionResult> CancelReceipt(int id)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == 0)
+            {
+                return Unauthorized(new { message = "Không thể xác định người dùng" });
+            }
+
+            var result = await _workflowService.CancelReceiptAsync(id, currentUserId);
+            if (!result)
+            {
+                return BadRequest(new { message = "Không thể hủy phiếu nhập. Chỉ có thể hủy phiếu nhập ở trạng thái 'Chờ phê duyệt'" });
+            }
+
+            return Ok(new { message = "Phiếu nhập đã được hủy" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi khi hủy phiếu nhập", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Gửi lại phiếu nhập để phê duyệt (After rejected)
+    /// </summary>
+    [HttpPost("{id}/resubmit")]
+    public async Task<IActionResult> ResubmitReceipt(int id)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == 0)
+            {
+                return Unauthorized(new { message = "Không thể xác định người dùng" });
+            }
+
+            var result = await _workflowService.ResubmitReceiptAsync(id, currentUserId);
+            if (!result)
+            {
+                return BadRequest(new { message = "Không thể gửi lại phiếu nhập. Chỉ có thể gửi lại phiếu nhập ở trạng thái 'Bị từ chối'" });
+            }
+
+            return Ok(new { message = "Phiếu nhập đã được gửi lại để phê duyệt" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi khi gửi lại phiếu nhập", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Xuất phiếu nhập ra PDF
+    /// </summary>
+    [HttpGet("{id}/pdf")]
+    public async Task<IActionResult> ExportToPDF(int id)
+    {
+        try
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new { message = "ID phiếu nhập không hợp lệ" });
+            }
+
+            var receipt = await _goodsReceiptService.GetGoodsReceiptByIdAsync(id);
+            if (receipt == null)
+            {
+                return NotFound(new { message = "Không tìm thấy phiếu nhập" });
+            }
+
+            var pdfService = HttpContext.RequestServices.GetRequiredService<IPdfService>();
+            var pdfBytes = await pdfService.GenerateGoodsReceiptPdfAsync(receipt);
+
+            var fileName = $"phieu-nhap-{receipt.ReceiptNumber ?? receipt.GoodsReceiptId.ToString()}.pdf";
+            
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi khi xuất PDF", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Gửi lại email xác nhận cho nhà cung cấp (luôn có PDF đính kèm)
+    /// </summary>
+    [HttpPost("{id}/resend-supplier-email")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> ResendSupplierEmail(int id)
+    {
+        try
+        {
+            var result = await _workflowService.SendSupplierConfirmationEmailAsync(id);
+            if (!result)
+            {
+                return BadRequest(new { message = "Không thể gửi email với PDF" });
+            }
+
+            return Ok(new { message = "Email kèm PDF đã được gửi cho nhà cung cấp" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi khi gửi email với PDF", error = ex.Message });
         }
     }
 

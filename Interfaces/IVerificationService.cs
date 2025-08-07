@@ -12,6 +12,7 @@ public interface IVerificationService
 public interface INotificationService
 {
     Task<bool> SendEmailAsync(string to, string subject, string body);
+    Task<bool> SendEmailWithAttachmentsAsync(string to, string subject, string body, List<(string fileName, byte[] content, string mimeType)> attachments);
     Task<bool> SendSmsAsync(string phoneNumber, string message);
     Task<bool> ValidateContactAsync(string contact, string type);
 }

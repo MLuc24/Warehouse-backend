@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using WarehouseManage.Constants;
 using WarehouseManage.Data;
 using WarehouseManage.DTOs.GoodsReceipt;
@@ -14,19 +15,22 @@ public class GoodsReceiptService : IGoodsReceiptService
     private readonly IProductRepository _productRepository;
     private readonly IGoodsReceiptWorkflowService _workflowService;
     private readonly WarehouseDbContext _context;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public GoodsReceiptService(
         IGoodsReceiptRepository goodsReceiptRepository,
         ISupplierRepository supplierRepository,
         IProductRepository productRepository,
         IGoodsReceiptWorkflowService workflowService,
-        WarehouseDbContext context)
+        WarehouseDbContext context,
+        IServiceScopeFactory serviceScopeFactory)
     {
         _goodsReceiptRepository = goodsReceiptRepository;
         _supplierRepository = supplierRepository;
         _productRepository = productRepository;
         _workflowService = workflowService;
         _context = context;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     public async Task<PagedResult<GoodsReceiptDto>> GetGoodsReceiptsAsync(GoodsReceiptFilterDto filter)
@@ -96,10 +100,17 @@ public class GoodsReceiptService : IGoodsReceiptService
             decimal totalAmount = 0;
             var details = new List<GoodsReceiptDetail>();
 
+            // Validate tất cả products một lần để giảm database calls
+            var productIds = dto.Details.Select(d => d.ProductId).Distinct().ToList();
+            var existingProductIds = await _context.Products
+                .Where(p => productIds.Contains(p.ProductId))
+                .Select(p => p.ProductId)
+                .ToListAsync();
+
             foreach (var detailDto in dto.Details)
             {
-                // Validate product exists
-                if (!await _productRepository.ExistsAsync(detailDto.ProductId))
+                // Validate product exists (sử dụng list đã load sẵn)
+                if (!existingProductIds.Contains(detailDto.ProductId))
                 {
                     throw new ArgumentException($"Sản phẩm ID {detailDto.ProductId} không tồn tại");
                 }
@@ -121,13 +132,15 @@ public class GoodsReceiptService : IGoodsReceiptService
             // Save receipt
             var createdReceipt = await _goodsReceiptRepository.CreateGoodsReceiptAsync(receipt);
 
+            await transaction.CommitAsync();
+
             // Send supplier email if status is Pending (Admin/Manager created)
+            // Thực hiện sau khi commit transaction để tránh timeout
             if (initialStatus == GoodsReceiptConstants.Status.Pending)
             {
-                await _workflowService.SendSupplierConfirmationEmailAsync(createdReceipt.GoodsReceiptId);
+                // Fire and forget - không chờ email completion
+                _ = SendSupplierEmailAsync(createdReceipt.GoodsReceiptId);
             }
-
-            await transaction.CommitAsync();
 
             return MapToDto(createdReceipt);
         }
@@ -326,8 +339,25 @@ public class GoodsReceiptService : IGoodsReceiptService
                 ProductSku = d.Product?.Sku,
                 Quantity = d.Quantity,
                 UnitPrice = d.UnitPrice,
-                Subtotal = d.Subtotal
+                Subtotal = d.Subtotal,
+                Unit = d.Product?.Unit,
+                ImageUrl = d.Product?.ImageUrl
             }).ToList() ?? new List<GoodsReceiptDetailDto>()
         };
+    }
+
+    private async Task SendSupplierEmailAsync(int goodsReceiptId)
+    {
+        try
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var workflowService = scope.ServiceProvider.GetRequiredService<IGoodsReceiptWorkflowService>();
+            await workflowService.SendSupplierConfirmationEmailAsync(goodsReceiptId);
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't fail the creation process
+            Console.WriteLine($"Error sending supplier email: {ex.Message}");
+        }
     }
 }

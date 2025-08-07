@@ -48,6 +48,9 @@ builder.Services.AddScoped<WarehouseManage.Interfaces.IProductExpiryService, War
 builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsReceiptService, WarehouseManage.Services.GoodsReceiptService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsReceiptWorkflowService, WarehouseManage.Services.GoodsReceiptWorkflowService>();
 
+// PDF Service
+builder.Services.AddScoped<WarehouseManage.Services.IPdfService, WarehouseManage.Services.PdfService>();
+
 // Register Category service
 builder.Services.AddScoped<WarehouseManage.Interfaces.ICategoryService, WarehouseManage.Services.CategoryService>();
 

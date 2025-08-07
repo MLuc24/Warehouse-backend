@@ -9,6 +9,8 @@ public interface IGoodsReceiptWorkflowService
     Task<bool> SendSupplierConfirmationEmailAsync(int goodsReceiptId);
     Task<bool> ConfirmBySupplierAsync(SupplierConfirmationDto confirmationDto);
     Task<bool> CompleteReceiptAsync(CompleteReceiptDto completeDto, int currentUserId);
+    Task<bool> CancelReceiptAsync(int goodsReceiptId, int currentUserId);
+    Task<bool> ResubmitReceiptAsync(int goodsReceiptId, int currentUserId);
     Task<List<string>> GetAvailableActionsAsync(int goodsReceiptId, int currentUserId, string currentUserRole);
     
     // Helper methods

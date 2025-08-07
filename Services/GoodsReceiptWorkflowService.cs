@@ -4,6 +4,7 @@ using WarehouseManage.Data;
 using WarehouseManage.DTOs.GoodsReceipt;
 using WarehouseManage.Interfaces;
 using WarehouseManage.Model;
+using WarehouseManage.Services;
 
 namespace WarehouseManage.Services;
 
@@ -13,17 +14,20 @@ public class GoodsReceiptWorkflowService : IGoodsReceiptWorkflowService
     private readonly ILogger<GoodsReceiptWorkflowService> _logger;
     private readonly INotificationService _notificationService;
     private readonly IConfiguration _configuration;
+    private readonly IPdfService _pdfService;
 
     public GoodsReceiptWorkflowService(
         WarehouseDbContext context, 
         ILogger<GoodsReceiptWorkflowService> logger,
         INotificationService notificationService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IPdfService pdfService)
     {
         _context = context;
         _logger = logger;
         _notificationService = notificationService;
         _configuration = configuration;
+        _pdfService = pdfService;
     }
 
     public async Task<WorkflowStatusDto> GetWorkflowStatusAsync(int goodsReceiptId, int currentUserId)
@@ -108,37 +112,89 @@ public class GoodsReceiptWorkflowService : IGoodsReceiptWorkflowService
         var goodsReceipt = await _context.GoodsReceipts
             .Include(gr => gr.Supplier)
             .Include(gr => gr.CreatedByUser)
+            .Include(gr => gr.GoodsReceiptDetails)
+                .ThenInclude(grd => grd.Product)
             .FirstOrDefaultAsync(gr => gr.GoodsReceiptId == goodsReceiptId);
 
-        if (goodsReceipt == null || string.IsNullOrEmpty(goodsReceipt.Supplier.Email))
+        if (goodsReceipt == null || goodsReceipt.Supplier == null || string.IsNullOrEmpty(goodsReceipt.Supplier.Email))
             return false;
 
-        // Generate confirmation token
-        goodsReceipt.SupplierConfirmationToken = Guid.NewGuid().ToString();
-        await _context.SaveChangesAsync();
-
-        // Build confirmation URLs
-        var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "http://localhost:5000";
-        var confirmUrl = $"{baseUrl}/api/goodsreceipt/supplier-confirm?token={goodsReceipt.SupplierConfirmationToken}&confirmed=true";
-        var rejectUrl = $"{baseUrl}/api/goodsreceipt/supplier-confirm?token={goodsReceipt.SupplierConfirmationToken}&confirmed=false";
-
-        // Create HTML email body
-        var emailBody = CreateSupplierConfirmationEmailHtml(goodsReceipt, confirmUrl, rejectUrl);
-        var subject = $"Xác nhận phiếu nhập hàng #{goodsReceipt.ReceiptNumber}";
-
-        // Send email
-        var emailSent = await _notificationService.SendEmailAsync(goodsReceipt.Supplier.Email, subject, emailBody);
-        
-        if (emailSent)
+        // Create GoodsReceiptDto for PDF generation
+        var goodsReceiptDto = new GoodsReceiptDto
         {
-            _logger.LogInformation($"Confirmation email sent successfully to supplier {goodsReceipt.Supplier.Email} for goods receipt {goodsReceipt.ReceiptNumber}");
-        }
-        else
-        {
-            _logger.LogError($"Failed to send confirmation email to supplier {goodsReceipt.Supplier.Email} for goods receipt {goodsReceipt.ReceiptNumber}");
-        }
+            GoodsReceiptId = goodsReceipt.GoodsReceiptId,
+            ReceiptNumber = goodsReceipt.ReceiptNumber,
+            SupplierId = goodsReceipt.SupplierId,
+            SupplierName = goodsReceipt.Supplier?.SupplierName ?? "",
+            ReceiptDate = goodsReceipt.ReceiptDate,
+            TotalAmount = goodsReceipt.TotalAmount,
+            Notes = goodsReceipt.Notes,
+            Status = goodsReceipt.Status,
+            CreatedByUserName = goodsReceipt.CreatedByUser?.FullName ?? "",
+            Details = goodsReceipt.GoodsReceiptDetails?.Select(d => new GoodsReceiptDetailDto
+            {
+                ProductId = d.ProductId,
+                ProductName = d.Product?.ProductName ?? "",
+                ProductSku = d.Product?.Sku ?? "",
+                Quantity = d.Quantity,
+                UnitPrice = d.UnitPrice,
+                Subtotal = d.Subtotal,
+                Unit = d.Product?.Unit ?? ""
+            }).ToList() ?? new List<GoodsReceiptDetailDto>()
+        };
 
-        return emailSent;
+        try
+        {
+            // Generate PDF
+            var pdfBytes = await _pdfService.GenerateGoodsReceiptPdfAsync(goodsReceiptDto);
+
+            // Generate confirmation token if not exists
+            if (string.IsNullOrEmpty(goodsReceipt.SupplierConfirmationToken))
+            {
+                goodsReceipt.SupplierConfirmationToken = Guid.NewGuid().ToString();
+                await _context.SaveChangesAsync();
+            }
+
+            // Build confirmation URLs
+            var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "http://localhost:5000";
+            var confirmUrl = $"{baseUrl}/api/goodsreceipt/supplier-confirm?token={goodsReceipt.SupplierConfirmationToken}&confirmed=true";
+            var rejectUrl = $"{baseUrl}/api/goodsreceipt/supplier-confirm?token={goodsReceipt.SupplierConfirmationToken}&confirmed=false";
+
+            // Create HTML email body
+            var emailBody = CreateSupplierConfirmationEmailHtml(goodsReceipt, confirmUrl, rejectUrl);
+            var subject = $"Xác nhận phiếu nhập hàng #{goodsReceipt.ReceiptNumber}";
+
+            // Create PDF attachment
+            var attachments = new List<(string fileName, byte[] content, string mimeType)>
+            {
+                ($"phieu-nhap-{goodsReceipt.ReceiptNumber}.pdf", pdfBytes, "application/pdf")
+            };
+
+            // Send email with PDF attachment  
+#pragma warning disable CS8602 // Dereference of a possibly null reference
+            var emailSent = await _notificationService.SendEmailWithAttachmentsAsync(
+                goodsReceipt.Supplier.Email, 
+                subject, 
+                emailBody, 
+                attachments);
+#pragma warning restore CS8602
+
+            if (emailSent)
+            {
+                _logger.LogInformation($"Confirmation email with PDF sent successfully to supplier {goodsReceipt.Supplier.Email} for goods receipt {goodsReceipt.ReceiptNumber}");
+            }
+            else
+            {
+                _logger.LogError($"Failed to send confirmation email with PDF to supplier {goodsReceipt.Supplier.Email} for goods receipt {goodsReceipt.ReceiptNumber}");
+            }
+
+            return emailSent;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error sending email with PDF for goods receipt {goodsReceipt.ReceiptNumber}");
+            return false;
+        }
     }
 
     public async Task<bool> ConfirmBySupplierAsync(SupplierConfirmationDto confirmationDto)
@@ -223,6 +279,42 @@ public class GoodsReceiptWorkflowService : IGoodsReceiptWorkflowService
         }
     }
 
+    public async Task<bool> CancelReceiptAsync(int goodsReceiptId, int currentUserId)
+    {
+        var goodsReceipt = await _context.GoodsReceipts.FindAsync(goodsReceiptId);
+        if (goodsReceipt == null || goodsReceipt.Status != GoodsReceiptConstants.Status.AwaitingApproval)
+            return false;
+
+        // Check if current user is the creator (only creator can cancel)
+        if (goodsReceipt.CreatedByUserId != currentUserId)
+            return false;
+
+        goodsReceipt.Status = GoodsReceiptConstants.Status.Cancelled;
+        
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> ResubmitReceiptAsync(int goodsReceiptId, int currentUserId)
+    {
+        var goodsReceipt = await _context.GoodsReceipts.FindAsync(goodsReceiptId);
+        if (goodsReceipt == null || goodsReceipt.Status != GoodsReceiptConstants.Status.Rejected)
+            return false;
+
+        // Check if current user is the creator (only creator can resubmit)
+        if (goodsReceipt.CreatedByUserId != currentUserId)
+            return false;
+
+        goodsReceipt.Status = GoodsReceiptConstants.Status.AwaitingApproval;
+        // Clear previous approval data
+        goodsReceipt.ApprovedByUserId = null;
+        goodsReceipt.ApprovedDate = null;
+        goodsReceipt.ApprovalNotes = null;
+        
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<List<string>> GetAvailableActionsAsync(int goodsReceiptId, int currentUserId, string currentUserRole)
     {
         var goodsReceipt = await _context.GoodsReceipts.FindAsync(goodsReceiptId);
@@ -245,16 +337,35 @@ public class GoodsReceiptWorkflowService : IGoodsReceiptWorkflowService
                     actions.Add(GoodsReceiptConstants.WorkflowActions.Approve);
                     actions.Add(GoodsReceiptConstants.WorkflowActions.Reject);
                 }
+                // User can cancel their own receipt when awaiting approval
+                if (goodsReceipt.CreatedByUserId == currentUserId)
+                {
+                    actions.Add("Cancel");
+                }
                 break;
 
             case GoodsReceiptConstants.Status.Pending:
                 actions.Add("ResendSupplierEmail");
+                // User can edit when pending (waiting for supplier)
+                if (goodsReceipt.CreatedByUserId == currentUserId)
+                {
+                    actions.Add("Edit");
+                }
                 break;
 
             case GoodsReceiptConstants.Status.SupplierConfirmed:
                 if (CanUserComplete(currentUserRole))
                 {
                     actions.Add(GoodsReceiptConstants.WorkflowActions.CompleteReceipt);
+                }
+                break;
+
+            case GoodsReceiptConstants.Status.Rejected:
+                // User can resubmit their own rejected receipt
+                if (goodsReceipt.CreatedByUserId == currentUserId)
+                {
+                    actions.Add("Resubmit");
+                    actions.Add("Edit");
                 }
                 break;
 

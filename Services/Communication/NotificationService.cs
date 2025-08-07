@@ -71,6 +71,68 @@ public class NotificationService : INotificationService
         }
     }
 
+    public async Task<bool> SendEmailWithAttachmentsAsync(string to, string subject, string body, List<(string fileName, byte[] content, string mimeType)> attachments)
+    {
+        try
+        {
+            // Chỉ kiểm tra format email cơ bản
+            if (!IsValidEmailFormat(to))
+            {
+                _logger.LogWarning("Email {Email} has invalid format", to);
+                return false;
+            }
+
+            var smtpHost = _configuration["EmailSettings:SmtpHost"];
+            var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
+            var smtpUsername = Environment.GetEnvironmentVariable("SMTP_USERNAME");
+            var smtpPassword = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+            var fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL");
+            var fromName = _configuration["EmailSettings:FromName"];
+
+            if (string.IsNullOrEmpty(smtpHost) || string.IsNullOrEmpty(smtpUsername) || 
+                string.IsNullOrEmpty(smtpPassword) || string.IsNullOrEmpty(fromEmail))
+            {
+                _logger.LogError("Email configuration is missing in environment variables");
+                return false;
+            }
+
+            using var client = new SmtpClient(smtpHost, smtpPort)
+            {
+                EnableSsl = true,
+                Credentials = new NetworkCredential(smtpUsername, smtpPassword)
+            };
+
+            var mailMessage = new MailMessage
+            {
+                From = new MailAddress(fromEmail, fromName),
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = true // Enable HTML email
+            };
+            
+            mailMessage.To.Add(to);
+
+            // Add attachments
+            if (attachments?.Any() == true)
+            {
+                foreach (var (fileName, content, mimeType) in attachments)
+                {
+                    var attachment = new Attachment(new MemoryStream(content), fileName, mimeType);
+                    mailMessage.Attachments.Add(attachment);
+                }
+            }
+
+            await client.SendMailAsync(mailMessage);
+            _logger.LogInformation("Email with {AttachmentCount} attachments sent successfully to {Email}", attachments?.Count ?? 0, to);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email with attachments to {Email}", to);
+            return false;
+        }
+    }
+
     public async Task<bool> SendSmsAsync(string phoneNumber, string message)
     {
         try

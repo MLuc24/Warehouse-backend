@@ -10,6 +10,7 @@ public class GoodsReceiptMappingProfile : Profile
     {
         // GoodsReceipt mappings
         CreateMap<GoodsReceipt, GoodsReceiptDto>()
+            .ForMember(dest => dest.CreatedByUserId, opt => opt.MapFrom(src => src.CreatedByUserId))
             .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.Supplier != null ? src.Supplier.SupplierName : ""))
             .ForMember(dest => dest.CreatedByUserName, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : ""))
             .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.GoodsReceiptDetails));

@@ -4,6 +4,7 @@ using iText.Layout.Element;
 using iText.Layout.Properties;
 using iText.Kernel.Font;
 using iText.IO.Font.Constants;
+using iText.IO.Font;
 using WarehouseManage.DTOs.GoodsReceipt;
 
 namespace WarehouseManage.Services
@@ -29,9 +30,42 @@ namespace WarehouseManage.Services
                 using var pdf = new PdfDocument(writer);
                 using var document = new Document(pdf);
 
-                // Set font
-                var font = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
-                var boldFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
+                // Set font that supports Vietnamese characters
+                PdfFont font;
+                PdfFont boldFont;
+                
+                try
+                {
+                    // Try to load Arial font from system (Windows)
+                    var fontPath = GetSystemFontPath("arial.ttf");
+                    var boldFontPath = GetSystemFontPath("arialbd.ttf");
+                    
+                    if (!string.IsNullOrEmpty(fontPath) && File.Exists(fontPath))
+                    {
+                        font = PdfFontFactory.CreateFont(fontPath, PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.FORCE_EMBEDDED);
+                    }
+                    else
+                    {
+                        // Fallback: create font with identity encoding for Unicode support
+                        font = PdfFontFactory.CreateFont(StandardFonts.HELVETICA, PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.FORCE_NOT_EMBEDDED);
+                    }
+                    
+                    if (!string.IsNullOrEmpty(boldFontPath) && File.Exists(boldFontPath))
+                    {
+                        boldFont = PdfFontFactory.CreateFont(boldFontPath, PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.FORCE_EMBEDDED);
+                    }
+                    else
+                    {
+                        boldFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD, PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.FORCE_NOT_EMBEDDED);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Final fallback - use standard fonts
+                    font = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
+                    boldFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
+                    Console.WriteLine($"Warning: Could not load Vietnamese font, using standard fonts. Error: {ex.Message}");
+                }
 
                 // Company header
                 var companyHeader = new Paragraph("CÔNG TY QUẢN LÝ KHO HÀNG")
@@ -148,6 +182,46 @@ namespace WarehouseManage.Services
                 "Completed" => "Hoàn thành",
                 _ => status
             };
+        }
+
+        private static string GetSystemFontPath(string fontFileName)
+        {
+            try
+            {
+                // First, try to find font in project Assets folder
+                var projectFontPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Fonts", fontFileName);
+                if (File.Exists(projectFontPath))
+                {
+                    return projectFontPath;
+                }
+
+                // Windows font paths
+                var windowsFontsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Fonts", fontFileName);
+                if (File.Exists(windowsFontsPath))
+                {
+                    return windowsFontsPath;
+                }
+
+                // Alternative Windows path
+                var systemFontsPath = "C:\\Windows\\Fonts\\" + fontFileName;
+                if (File.Exists(systemFontsPath))
+                {
+                    return systemFontsPath;
+                }
+
+                // User fonts path
+                var userFontsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Microsoft", "Windows", "Fonts", fontFileName);
+                if (File.Exists(userFontsPath))
+                {
+                    return userFontsPath;
+                }
+
+                return string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
     }
 }

@@ -75,11 +75,20 @@ public partial class WarehouseDbContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
-                .HasDefaultValue("New");
+                .HasDefaultValue("Draft");
             entity.Property(e => e.TotalAmount)
                 .HasDefaultValue(0m)
                 .HasColumnType("decimal(18, 2)");
+                
+            // Timestamps
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime2");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime2");
 
+            // Relationships
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.GoodsIssues)
                 .HasForeignKey(d => d.CreatedByUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -87,8 +96,29 @@ public partial class WarehouseDbContext : DbContext
 
             entity.HasOne(d => d.Customer).WithMany(p => p.GoodsIssues)
                 .HasForeignKey(d => d.CustomerId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK_GoodsIssues_Customers");
+                
+            // Workflow users
+            entity.HasOne(d => d.ApprovedByUser).WithMany()
+                .HasForeignKey(d => d.ApprovedByUserId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_GoodsIssues_ApprovedByUser");
+                
+            entity.HasOne(d => d.PreparedByUser).WithMany()
+                .HasForeignKey(d => d.PreparedByUserId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_GoodsIssues_PreparedByUser");
+                
+            entity.HasOne(d => d.DeliveredByUser).WithMany()
+                .HasForeignKey(d => d.DeliveredByUserId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_GoodsIssues_DeliveredByUser");
+                
+            entity.HasOne(d => d.CompletedByUser).WithMany()
+                .HasForeignKey(d => d.CompletedByUserId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_GoodsIssues_CompletedByUser");
         });
 
         modelBuilder.Entity<GoodsIssueDetail>(entity =>

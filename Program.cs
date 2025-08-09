@@ -50,6 +50,11 @@ builder.Services.AddScoped<WarehouseManage.Interfaces.IProductExpiryService, War
 builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsReceiptService, WarehouseManage.Services.GoodsReceiptService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsReceiptWorkflowService, WarehouseManage.Services.GoodsReceiptWorkflowService>();
 
+// Register GoodsIssue services
+builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsIssueRepository, WarehouseManage.Repositories.GoodsIssueRepository>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsIssueService, WarehouseManage.Services.GoodsIssueService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsIssueWorkflowService, WarehouseManage.Services.GoodsIssueWorkflowService>();
+
 // PDF Service
 builder.Services.AddScoped<WarehouseManage.Services.IPdfService, WarehouseManage.Services.PdfService>();
 

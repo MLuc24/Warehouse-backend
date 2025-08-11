@@ -10,11 +10,13 @@ namespace WarehouseManage.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IUserRepository _userRepository;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(IAuthService authService, IUserRepository userRepository, ILogger<AuthController> logger)
     {
         _authService = authService;
+        _userRepository = userRepository;
         _logger = logger;
     }
 
@@ -88,28 +90,34 @@ public class AuthController : ControllerBase
     /// <returns>Thông tin người dùng hiện tại</returns>
     [HttpGet("me")]
     [Microsoft.AspNetCore.Authorization.Authorize]
-    public IActionResult GetCurrentUser()
+    public async Task<IActionResult> GetCurrentUser()
     {
         try
         {
-            var userId = User.FindFirst(AuthConstants.ClaimTypes.USER_ID)?.Value;
-            var username = User.FindFirst(AuthConstants.ClaimTypes.USERNAME)?.Value;
-            var fullName = User.FindFirst(AuthConstants.ClaimTypes.FULL_NAME)?.Value;
-            // Use standard .NET role claim type instead of custom one
-            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-
-            if (string.IsNullOrEmpty(userId))
+            var userIdClaim = User.FindFirst(AuthConstants.ClaimTypes.USER_ID)?.Value;
+            
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized(new { success = false, message = ErrorMessages.Auth.INVALID_TOKEN });
             }
 
+            // Get full user data from database
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { success = false, message = "User not found" });
+            }
+
             var userInfo = new UserInfoDto
             {
-                UserId = int.Parse(userId),
-                Username = username!,
-                FullName = fullName!,
-                Email = string.Empty, // Có thể lấy từ claims nếu cần
-                Role = role!
+                UserId = user.UserId,
+                Username = user.Username,
+                FullName = user.FullName,
+                Email = user.Email ?? string.Empty,
+                PhoneNumber = user.PhoneNumber,
+                Address = user.Address,
+                Image = user.Image,
+                Role = user.Role
             };
 
             return Ok(new { success = true, data = userInfo });

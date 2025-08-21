@@ -33,6 +33,7 @@ builder.Services.AddAutoMapper(typeof(Program));
 
 // Register repositories
 builder.Services.AddScoped<WarehouseManage.Interfaces.IUserRepository, WarehouseManage.Repositories.UserRepository>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IEmployeeRepository, WarehouseManage.Repositories.EmployeeRepository>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierRepository, WarehouseManage.Repositories.SupplierRepository>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.ICustomerRepository, WarehouseManage.Repositories.CustomerRepository>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IProductRepository, WarehouseManage.Repositories.ProductRepository>();
@@ -40,6 +41,7 @@ builder.Services.AddScoped<WarehouseManage.Interfaces.IGoodsReceiptRepository, W
 
 // Register services
 builder.Services.AddScoped<WarehouseManage.Interfaces.IAuthService, WarehouseManage.Services.AuthService>();
+builder.Services.AddScoped<WarehouseManage.Interfaces.IEmployeeService, WarehouseManage.Services.EmployeeService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.IVerificationService, WarehouseManage.Services.VerificationService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.ISupplierService, WarehouseManage.Services.SupplierService>();
 builder.Services.AddScoped<WarehouseManage.Interfaces.ICustomerService, WarehouseManage.Services.CustomerService>();
